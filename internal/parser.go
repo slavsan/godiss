@@ -11,9 +11,16 @@ import (
 	"strings"
 )
 
+var currentFile string
+
 type Struct struct {
-	Name   string
-	Fields []*Field
+	Name    string
+	Fields  []*Field
+	Methods []*Method
+}
+
+type Method struct {
+	Signature string
 }
 
 type Field struct {
@@ -60,6 +67,10 @@ func ParsePackage(pkg *Package) error {
 			f.Path = fileName
 			structs := []*Struct{}
 
+			currentFile = fileName
+
+			methods := map[string][]*Method{}
+
 			for _, node := range astFile.Decls {
 				switch v := node.(type) {
 				case *ast.GenDecl:
@@ -72,11 +83,58 @@ func ParsePackage(pkg *Package) error {
 							structs = append(structs, s)
 						}
 					}
+				case *ast.FuncDecl:
+					if v.Recv == nil {
+						continue
+					}
+
+					var receiver string
+					switch t := v.Recv.List[0].Type.(type) {
+					case *ast.StarExpr:
+						receiver = t.X.(*ast.Ident).Name
+					case *ast.Ident:
+						receiver = t.Name
+					}
+					method := v.Name.Name
+					params := getCommaSeparated(v.Type.Params)
+					results := getCommaSeparated(v.Type.Results)
+
+					signature := fmt.Sprintf(
+						"%s(%s) %s",
+						method,
+						params,
+						results,
+					)
+
+					if _, ok := methods[receiver]; !ok {
+						methods[receiver] = []*Method{}
+					}
+
+					methods[receiver] = append(methods[receiver], &Method{
+						Signature: signature,
+					})
+
+				default:
+					panic(fmt.Sprintf("unknown decl: %v", node))
 				}
 			}
 
 			f.Structs = structs
 			files = append(files, f)
+
+			for receiver, m := range methods {
+				var s *Struct
+				for _, found := range f.Structs {
+					if x.Name == receiver {
+						s = found
+						break
+					}
+				}
+
+				if s != nil {
+					s.Methods = append(s.Methods, m...)
+				}
+			}
 		}
 
 		pkg.Files = files
@@ -337,9 +395,12 @@ func formatStruct(sb *strings.Builder, s *Struct) {
 			<tr> <td port="switch" align="left">
 				%s
 			</td> </tr>
+			<tr> <td port="switch" align="left">
+				%s
+			</td> </tr>
 		</table>>
 		shape=plain
-	]`, s.Name, s.Name, formatStructFields(s)))
+	]`, s.Name, s.Name, formatStructFields(s), formatStructMethods(s)))
 	sb.WriteString("\n")
 }
 
@@ -351,6 +412,19 @@ func formatStructFields(s *Struct) string {
 			"%s %s<br/>\n",
 			strings.ReplaceAll(strings.ReplaceAll(f.Name, "<", "&lt;"), ">", "&gt;"),
 			strings.ReplaceAll(strings.ReplaceAll(f.Type, "<", "&lt;"), ">", "&gt;"),
+		))
+	}
+
+	return sb.String()
+}
+
+func formatStructMethods(s *Struct) string {
+	var sb strings.Builder
+
+	for _, m := range s.Methods {
+		sb.WriteString(fmt.Sprintf(
+			"%s<br/>\n",
+			strings.ReplaceAll(strings.ReplaceAll(m.Signature, "<", "&lt;"), ">", "&gt;"),
 		))
 	}
 

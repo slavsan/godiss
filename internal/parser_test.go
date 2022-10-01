@@ -74,6 +74,9 @@ func TestFormatStructs(t *testing.T) {
                                 Name string<br/>
 
                         </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
+                        </td> </tr>
                 </table>>
                 shape=plain
         ]
@@ -87,6 +90,9 @@ func TestFormatStructs(t *testing.T) {
 Colleagues []*Mechanic<br/>
 
                         </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
+                        </td> </tr>
                 </table>>
                 shape=plain
         ]
@@ -99,6 +105,9 @@ Colleagues []*Mechanic<br/>
                                 Pointer *Mechanic<br/>
 
                         </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
+                        </td> </tr>
                 </table>>
                 shape=plain
         ]
@@ -110,6 +119,9 @@ Colleagues []*Mechanic<br/>
                         <tr> <td port="switch" align="left">
                                 name string<br/>
 
+                        </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
                         </td> </tr>
                 </table>>
                 shape=plain
@@ -212,6 +224,10 @@ func TestLoadPackages(t *testing.T) {
 							Fields: []*internal.Field{
 								{Name: "Doors", Type: "int"},
 							},
+							Methods: []*internal.Method{
+								{Signature: "StartEngine() error"},
+								{Signature: "StopEngine() error"},
+							},
 						},
 					},
 				},
@@ -258,6 +274,9 @@ subgraph cluster____examples {label = "../examples"
                                 Name string<br/>
 
                         </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
+                        </td> </tr>
                 </table>>
                 shape=plain
         ]
@@ -271,6 +290,9 @@ subgraph cluster____examples {label = "../examples"
 Colleagues []*Mechanic<br/>
 
                         </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
+                        </td> </tr>
                 </table>>
                 shape=plain
         ]
@@ -283,6 +305,9 @@ Colleagues []*Mechanic<br/>
                                 Pointer *Mechanic<br/>
 
                         </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
+                        </td> </tr>
                 </table>>
                 shape=plain
         ]
@@ -294,6 +319,9 @@ Colleagues []*Mechanic<br/>
                         <tr> <td port="switch" align="left">
                                 name string<br/>
 
+                        </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
                         </td> </tr>
                 </table>>
                 shape=plain
@@ -326,6 +354,9 @@ AnotherStruct struct{  sync.Mutex }<br/>
  sync.Mutex<br/>
 
                         </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                
+                        </td> </tr>
                 </table>>
                 shape=plain
         ]
@@ -340,6 +371,11 @@ subgraph cluster____examples_other {label = "../examples/other"
                         <tr> <td port="push" sides="ltr"><b>Vehicle</b></td> </tr>
                         <tr> <td port="switch" align="left">
                                 Doors int<br/>
+
+                        </td> </tr>
+                        <tr> <td port="switch" align="left">
+                                StartEngine() error<br/>
+StopEngine() error<br/>
 
                         </td> </tr>
                 </table>>
