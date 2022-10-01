@@ -166,6 +166,7 @@ func LoadPackages(path, module, target string) (map[string]*Package, error) {
 	err := filepath.Walk(
 		path,
 		func(p string, info os.FileInfo, err error) error {
+			// TODO: don't follow symlinks
 			if err != nil {
 				panic(err)
 			}
@@ -332,23 +333,24 @@ func getStructFields(fl *ast.FieldList) string {
 func FormatPackages(packages map[string]*Package) string {
 	var sb strings.Builder
 	sb.WriteString("digraph {\n")
-	sb.WriteString(`	graph [
-		label = "Basic git concepts and operations\n\n"
-		labelloc = t
-		fontname = "Helvetica,Arial,sans-serif"
-		fontsize = 20
-		layout = dot
-		rankdir = LR
-		newrank = true
-	]
+	sb.WriteString(`    graph [
+        label = "Basic git concepts and operations\n\n"
+        labelloc = t
+        fontname = "Helvetica,Arial,sans-serif"
+        fontsize = 20
+        layout = dot
+        rankdir = LR
+        newrank = true
+    ]
 
-	node [
-		style=filled
-		shape=rect
-		pencolor="#00000044" // frames color
-		fontname="Helvetica,Arial,sans-serif"
-		shape=plaintext
-	]`)
+    node [
+        style=filled
+        shape=rect
+        pencolor="#00000044" // frames color
+        fontname="Helvetica,Arial,sans-serif"
+        shape=plaintext
+    ]
+`)
 
 	sortedPackages := []*Package{}
 
@@ -365,15 +367,15 @@ func FormatPackages(packages map[string]*Package) string {
 
 	for _, pkg := range sortedPackages {
 		pkgName := pkg.Path
-		sb.WriteString(fmt.Sprintf("\nsubgraph cluster_%s {", normalizePackageName(pkgName)))
-		sb.WriteString(fmt.Sprintf(`label = "%s"`, pkgName))
-		sb.WriteString("\n\n")
+		sb.WriteString(fmt.Sprintf("\n    subgraph cluster_%s {", normalizePackageName(pkgName)))
+		sb.WriteString(fmt.Sprintf("\n        label = \"%s\"", pkgName))
+		sb.WriteString("\n")
 		for _, f := range pkg.Files {
 			for _, s := range f.Structs {
-				formatStruct(&sb, s)
+				formatStruct(&sb, s, true)
 			}
 		}
-		sb.WriteString("}\n")
+		sb.WriteString("    }\n")
 	}
 
 	sb.WriteString("}\n")
@@ -384,26 +386,26 @@ func FormatPackages(packages map[string]*Package) string {
 func Format(structs []*Struct) string {
 	var sb strings.Builder
 	sb.WriteString("digraph {\n")
-	sb.WriteString(`	graph [
-		label = "Basic git concepts and operations\n\n"
-		labelloc = t
-		fontname = "Helvetica,Arial,sans-serif"
-		fontsize = 20
-		layout = dot
-		rankdir = LR
-		newrank = true
-	]
+	sb.WriteString(`    graph [
+        label = "Basic git concepts and operations\n\n"
+        labelloc = t
+        fontname = "Helvetica,Arial,sans-serif"
+        fontsize = 20
+        layout = dot
+        rankdir = LR
+        newrank = true
+    ]
 
-	node [
-		style=filled
-		shape=rect
-		pencolor="#00000044" // frames color
-		fontname="Helvetica,Arial,sans-serif"
-		shape=plaintext
-	]`)
-	sb.WriteString("\n\n")
+    node [
+        style=filled
+        shape=rect
+        pencolor="#00000044" // frames color
+        fontname="Helvetica,Arial,sans-serif"
+        shape=plaintext
+    ]`)
+	sb.WriteString("\n")
 	for _, s := range structs {
-		formatStruct(&sb, s)
+		formatStruct(&sb, s, false)
 	}
 
 	sb.WriteString("}\n")
@@ -411,32 +413,62 @@ func Format(structs []*Struct) string {
 	return sb.String()
 }
 
-func formatStruct(sb *strings.Builder, s *Struct) {
-	sb.WriteString(fmt.Sprintf(`
-	"%s" [
-		fillcolor="#88ff0022"
-		label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-			<tr> <td port="push" sides="ltr"><b>%s</b></td> </tr>
-			<tr> <td port="switch" align="left">
-				%s
-			</td> </tr>
-			<tr> <td port="switch" align="left">
-				%s
-			</td> </tr>
-		</table>>
-		shape=plain
-	]`, s.Name, s.Name, formatStructFields(s), formatStructMethods(s)))
+func pad(indent bool, x string) string {
+	if !indent {
+		return x
+	}
+	lines := strings.Split(x, "\n")
+	for i, l := range lines {
+		if l == "" {
+			continue
+		}
+		lines[i] = fmt.Sprintf("%s%s", tab, l)
+	}
+	return strings.Join(lines, "\n")
+}
+
+func formatStruct(sb *strings.Builder, s *Struct, indent bool) {
+	sb.WriteString(pad(indent, fmt.Sprintf(`
+    "%s" [
+        fillcolor="#88ff0022"
+        label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+            <tr><td port="push" sides="ltr"><b>%s</b></td></tr>
+            <tr><td port="switch" align="left">%s
+            </td></tr>
+            <tr><td port="switch" align="left">%s
+            </td></tr>
+        </table>>
+        shape=plain
+    ]`, s.Name, s.Name, formatStructFields(s), formatStructMethods(s))))
 	sb.WriteString("\n")
+}
+
+const tab = "    "
+
+func escape(v string) string {
+	if v == "" {
+		return v
+	}
+	return strings.ReplaceAll(strings.ReplaceAll(v, "<", "&lt;"), ">", "&gt;")
 }
 
 func formatStructFields(s *Struct) string {
 	var sb strings.Builder
 
 	for _, f := range s.Fields {
+		if f.Name == "" {
+			sb.WriteString(fmt.Sprintf(
+				"\n%s%s<br/>",
+				strings.Repeat(tab, 4),
+				escape(f.Type),
+			))
+			continue
+		}
 		sb.WriteString(fmt.Sprintf(
-			"%s %s<br/>\n",
-			strings.ReplaceAll(strings.ReplaceAll(f.Name, "<", "&lt;"), ">", "&gt;"),
-			strings.ReplaceAll(strings.ReplaceAll(f.Type, "<", "&lt;"), ">", "&gt;"),
+			"\n%s%s %s<br/>",
+			strings.Repeat(tab, 4),
+			escape(f.Name),
+			escape(f.Type),
 		))
 	}
 
@@ -448,7 +480,8 @@ func formatStructMethods(s *Struct) string {
 
 	for _, m := range s.Methods {
 		sb.WriteString(fmt.Sprintf(
-			"%s<br/>\n",
+			"\n%s%s<br/>",
+			strings.Repeat(tab, 4),
 			strings.ReplaceAll(strings.ReplaceAll(m.Signature, "<", "&lt;"), ">", "&gt;"),
 		))
 	}
@@ -476,7 +509,7 @@ func normalizePackageName(name string) string {
 func FormatImports(packages map[string]*Package) string {
 	var sb strings.Builder
 	sb.WriteString("digraph {\n")
-	sb.WriteString("\trankdir=\"LR\"\n\n")
+	sb.WriteString("    rankdir=\"LR\"\n\n")
 	sortedPackages := make([]*Package, 0, len(packages))
 
 	for _, p := range packages {
@@ -514,7 +547,7 @@ func FormatImports(packages map[string]*Package) string {
 				continue
 			}
 
-			sb.WriteString(fmt.Sprintf("\t \"%s\" -> \"%s\"\n", pkg.ModulePath, i))
+			sb.WriteString(fmt.Sprintf("    \"%s\" -> \"%s\"\n", pkg.ModulePath, i))
 		}
 	}
 	sb.WriteString("}\n")

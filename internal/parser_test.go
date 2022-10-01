@@ -47,85 +47,76 @@ func TestFormatStructs(t *testing.T) {
 	assertEqual(t, nil, err)
 
 	expected := `digraph {
-        graph [
-                label = "Basic git concepts and operations\n\n"
-                labelloc = t
-                fontname = "Helvetica,Arial,sans-serif"
-                fontsize = 20
-                layout = dot
-                rankdir = LR
-                newrank = true
-        ]
+    graph [
+        label = "Basic git concepts and operations\n\n"
+        labelloc = t
+        fontname = "Helvetica,Arial,sans-serif"
+        fontsize = 20
+        layout = dot
+        rankdir = LR
+        newrank = true
+    ]
 
-        node [
-                style=filled
-                shape=rect
-                pencolor="#00000044" // frames color
-                fontname="Helvetica,Arial,sans-serif"
-                shape=plaintext
-        ]
+    node [
+        style=filled
+        shape=rect
+        pencolor="#00000044" // frames color
+        fontname="Helvetica,Arial,sans-serif"
+        shape=plaintext
+    ]
 
+    "Factory" [
+        fillcolor="#88ff0022"
+        label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+            <tr><td port="push" sides="ltr"><b>Factory</b></td></tr>
+            <tr><td port="switch" align="left">
+                Name string<br/>
+            </td></tr>
+            <tr><td port="switch" align="left">
+            </td></tr>
+        </table>>
+        shape=plain
+    ]
 
-        "Factory" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>Factory</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                Name string<br/>
+    "Mechanic" [
+        fillcolor="#88ff0022"
+        label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+            <tr><td port="push" sides="ltr"><b>Mechanic</b></td></tr>
+            <tr><td port="switch" align="left">
+                Skills []string<br/>
+                Colleagues []*Mechanic<br/>
+            </td></tr>
+            <tr><td port="switch" align="left">
+            </td></tr>
+        </table>>
+        shape=plain
+    ]
 
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
-        ]
+    "Manager" [
+        fillcolor="#88ff0022"
+        label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+            <tr><td port="push" sides="ltr"><b>Manager</b></td></tr>
+            <tr><td port="switch" align="left">
+                Pointer *Mechanic<br/>
+            </td></tr>
+            <tr><td port="switch" align="left">
+            </td></tr>
+        </table>>
+        shape=plain
+    ]
 
-        "Mechanic" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>Mechanic</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                Skills []string<br/>
-Colleagues []*Mechanic<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
-        ]
-
-        "Manager" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>Manager</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                Pointer *Mechanic<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
-        ]
-
-        "tool" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>tool</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                name string<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
-        ]
+    "tool" [
+        fillcolor="#88ff0022"
+        label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+            <tr><td port="push" sides="ltr"><b>tool</b></td></tr>
+            <tr><td port="switch" align="left">
+                name string<br/>
+            </td></tr>
+            <tr><td port="switch" align="left">
+            </td></tr>
+        </table>>
+        shape=plain
+    ]
 }
 `
 	actualLines := strings.Split(internal.Format(actual), "\n")
@@ -258,143 +249,132 @@ func TestFormatPackages(t *testing.T) {
 		assertEqual(t, nil, err)
 	}
 	expected := `digraph {
-        graph [
-                label = "Basic git concepts and operations\n\n"
-                labelloc = t
-                fontname = "Helvetica,Arial,sans-serif"
-                fontsize = 20
-                layout = dot
-                rankdir = LR
-                newrank = true
-        ]
+    graph [
+        label = "Basic git concepts and operations\n\n"
+        labelloc = t
+        fontname = "Helvetica,Arial,sans-serif"
+        fontsize = 20
+        layout = dot
+        rankdir = LR
+        newrank = true
+    ]
 
-        node [
-                style=filled
-                shape=rect
-                pencolor="#00000044" // frames color
-                fontname="Helvetica,Arial,sans-serif"
-                shape=plaintext
-        ]
-subgraph cluster____examples {label = "../examples"
+    node [
+        style=filled
+        shape=rect
+        pencolor="#00000044" // frames color
+        fontname="Helvetica,Arial,sans-serif"
+        shape=plaintext
+    ]
 
+    subgraph cluster____examples {
+        label = "../examples"
 
         "Factory" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>Factory</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                Name string<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
+            fillcolor="#88ff0022"
+            label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+                <tr><td port="push" sides="ltr"><b>Factory</b></td></tr>
+                <tr><td port="switch" align="left">
+                    Name string<br/>
+                </td></tr>
+                <tr><td port="switch" align="left">
+                </td></tr>
+            </table>>
+            shape=plain
         ]
 
         "Mechanic" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>Mechanic</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                Skills []string<br/>
-Colleagues []*Mechanic<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
+            fillcolor="#88ff0022"
+            label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+                <tr><td port="push" sides="ltr"><b>Mechanic</b></td></tr>
+                <tr><td port="switch" align="left">
+                    Skills []string<br/>
+                    Colleagues []*Mechanic<br/>
+                </td></tr>
+                <tr><td port="switch" align="left">
+                </td></tr>
+            </table>>
+            shape=plain
         ]
 
         "Manager" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>Manager</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                Pointer *Mechanic<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
+            fillcolor="#88ff0022"
+            label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+                <tr><td port="push" sides="ltr"><b>Manager</b></td></tr>
+                <tr><td port="switch" align="left">
+                    Pointer *Mechanic<br/>
+                </td></tr>
+                <tr><td port="switch" align="left">
+                </td></tr>
+            </table>>
+            shape=plain
         ]
 
         "tool" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>tool</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                name string<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
+            fillcolor="#88ff0022"
+            label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+                <tr><td port="push" sides="ltr"><b>tool</b></td></tr>
+                <tr><td port="switch" align="left">
+                    name string<br/>
+                </td></tr>
+                <tr><td port="switch" align="left">
+                </td></tr>
+            </table>>
+            shape=plain
         ]
-}
+    }
 
-subgraph cluster____examples_cars {label = "../examples/cars"
-
+    subgraph cluster____examples_cars {
+        label = "../examples/cars"
 
         "Camaro" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>Camaro</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                 other.Vehicle<br/>
-Name string<br/>
-Features map[string]int<br/>
-Callback func(string, int) (int64, error)<br/>
-Fuel interface{}<br/>
-ChNoPos chan string<br/>
-ChRecv &lt;-chan int32<br/>
-ChSend chan&lt;- int32<br/>
-Struct struct{ XXX int }<br/>
-One string<br/>
-Two string<br/>
-Ellipsis func(...string)<br/>
-ExampleMutex func(sync.Mutex)<br/>
-Three sync.Mutex<br/>
-Four sync.Mutex<br/>
-AnotherStruct struct{  sync.Mutex }<br/>
- sync.Mutex<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                
-                        </td> </tr>
-                </table>>
-                shape=plain
+            fillcolor="#88ff0022"
+            label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+                <tr><td port="push" sides="ltr"><b>Camaro</b></td></tr>
+                <tr><td port="switch" align="left">
+                    other.Vehicle<br/>
+                    Name string<br/>
+                    Features map[string]int<br/>
+                    Callback func(string, int) (int64, error)<br/>
+                    Fuel interface{}<br/>
+                    ChNoPos chan string<br/>
+                    ChRecv &lt;-chan int32<br/>
+                    ChSend chan&lt;- int32<br/>
+                    Struct struct{ XXX int }<br/>
+                    One string<br/>
+                    Two string<br/>
+                    Ellipsis func(...string)<br/>
+                    ExampleMutex func(sync.Mutex)<br/>
+                    Three sync.Mutex<br/>
+                    Four sync.Mutex<br/>
+                    AnotherStruct struct{  sync.Mutex }<br/>
+                    sync.Mutex<br/>
+                </td></tr>
+                <tr><td port="switch" align="left">
+                </td></tr>
+            </table>>
+            shape=plain
         ]
-}
+    }
 
-subgraph cluster____examples_other {label = "../examples/other"
-
+    subgraph cluster____examples_other {
+        label = "../examples/other"
 
         "Vehicle" [
-                fillcolor="#88ff0022"
-                label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
-                        <tr> <td port="push" sides="ltr"><b>Vehicle</b></td> </tr>
-                        <tr> <td port="switch" align="left">
-                                Doors int<br/>
-
-                        </td> </tr>
-                        <tr> <td port="switch" align="left">
-                                StartEngine() error<br/>
-StopEngine() error<br/>
-
-                        </td> </tr>
-                </table>>
-                shape=plain
+            fillcolor="#88ff0022"
+            label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+                <tr><td port="push" sides="ltr"><b>Vehicle</b></td></tr>
+                <tr><td port="switch" align="left">
+                    Doors int<br/>
+                </td></tr>
+                <tr><td port="switch" align="left">
+                    StartEngine() error<br/>
+                    StopEngine() error<br/>
+                </td></tr>
+            </table>>
+            shape=plain
         ]
-}
+    }
 }
 `
 
@@ -415,10 +395,10 @@ func TestFormatImports(t *testing.T) {
 		assertEqual(t, nil, err)
 	}
 	expected := `digraph {
-        rankdir="LR"
+    rankdir="LR"
 
-         "../examples" -> "github.com/slavsan/gog/examples/cars"
-         "../examples/cars" -> "github.com/slavsan/gog/examples/other"
+    "../examples" -> "github.com/slavsan/gog/examples/cars"
+    "../examples/cars" -> "github.com/slavsan/gog/examples/other"
 }
 `
 
