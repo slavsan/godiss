@@ -1,5 +1,9 @@
 package auto
 
+import (
+	carmodel "github.com/slavsan/gog/examples/cars"
+)
+
 type Factory struct {
 	Name string
 }
@@ -19,4 +23,5 @@ type tool struct {
 
 type IMechanic interface {
 	DoWork()
+	BuildCamaro() (*carmodel.Camaro, error)
 }

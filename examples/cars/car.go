@@ -1,8 +1,14 @@
 package cars
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/slavsan/gog/examples/other"
+)
 
 type Camaro struct {
+	other.Vehicle
+
 	Name          string
 	Features      map[string]int
 	Callback      func(string, int) (int64, error)

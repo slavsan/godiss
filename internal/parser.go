@@ -23,6 +23,12 @@ type Method struct {
 	Signature string
 }
 
+type Import struct {
+	Name   string
+	Path   string
+	StdLib bool
+}
+
 type Field struct {
 	Name string
 	Type string
@@ -32,12 +38,14 @@ type File struct {
 	BuildConstraint string
 	Path            string
 	Structs         []*Struct
+	Imports         []*Import
 }
 
 type Package struct {
-	Name  string
-	Path  string
-	Files []*File
+	Name       string
+	Path       string
+	ModulePath string
+	Files      []*File
 }
 
 func ParsePackage(pkg *Package) error {
@@ -63,13 +71,22 @@ func ParsePackage(pkg *Package) error {
 		var files []*File
 
 		for fileName, astFile := range astPkg.Files {
-			f := &File{}
+			f := &File{
+				Imports: []*Import{},
+			}
 			f.Path = fileName
 			structs := []*Struct{}
-
 			currentFile = fileName
-
 			methods := map[string][]*Method{}
+
+			for _, node := range astFile.Imports {
+				name := ""
+				if node.Name != nil {
+					name = node.Name.Name
+				}
+				path := strings.ReplaceAll(node.Path.Value, "\"", "")
+				f.Imports = append(f.Imports, &Import{Name: name, Path: path, StdLib: isStdLib(path)})
+			}
 
 			for _, node := range astFile.Decls {
 				switch v := node.(type) {
@@ -125,7 +142,7 @@ func ParsePackage(pkg *Package) error {
 			for receiver, m := range methods {
 				var s *Struct
 				for _, found := range f.Structs {
-					if x.Name == receiver {
+					if found.Name == receiver {
 						s = found
 						break
 					}
@@ -143,7 +160,7 @@ func ParsePackage(pkg *Package) error {
 	return nil
 }
 
-func LoadPackages(path string) (map[string]*Package, error) {
+func LoadPackages(path, module, target string) (map[string]*Package, error) {
 	res := map[string]*Package{}
 
 	err := filepath.Walk(
@@ -156,8 +173,16 @@ func LoadPackages(path string) (map[string]*Package, error) {
 				if strings.Contains(p, "vendor") {
 					return nil
 				}
+				if strings.Contains(p, ".git") {
+					return nil
+				}
+				modulePath := fmt.Sprintf(
+					"%s%s",
+					module, strings.TrimPrefix(p, target),
+				)
 				res[p] = &Package{
-					Path: p,
+					Path:       p,
+					ModulePath: modulePath,
 				}
 			}
 			return nil
@@ -446,4 +471,123 @@ func hasBuldConstraint(pkg *ast.Package) bool {
 
 func normalizePackageName(name string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(name, "/", "_"), ".", "_"), "-", "_")
+}
+
+func FormatImports(packages map[string]*Package) string {
+	var sb strings.Builder
+	sb.WriteString("digraph {\n")
+	sb.WriteString("\trankdir=\"LR\"\n\n")
+	sortedPackages := make([]*Package, 0, len(packages))
+
+	for _, p := range packages {
+		sortedPackages = append(sortedPackages, p)
+	}
+
+	sort.SliceStable(sortedPackages, func(i, j int) bool {
+		if sortedPackages[i].Name == sortedPackages[j].Name {
+			return sortedPackages[i].Path < sortedPackages[j].Path
+		}
+		return sortedPackages[i].Name < sortedPackages[j].Name
+	})
+
+	for _, pkg := range sortedPackages {
+		if isFake(pkg.Name) || isMock(pkg.Name) || isTest(pkg.Name) {
+			continue
+		}
+
+		unique := map[string]struct{}{}
+		for _, f := range pkg.Files {
+			for _, i := range f.Imports {
+				if _, ok := unique[i.Path]; !ok {
+					unique[i.Path] = struct{}{}
+				}
+			}
+		}
+		sortedUnique := make([]string, 0, len(unique))
+		for i, _ := range unique {
+			sortedUnique = append(sortedUnique, i)
+		}
+		sort.Strings(sortedUnique)
+
+		for _, i := range sortedUnique {
+			if isStdLib(strings.ReplaceAll(i, "\"", "")) {
+				continue
+			}
+
+			sb.WriteString(fmt.Sprintf("\t \"%s\" -> \"%s\"\n", pkg.ModulePath, i))
+		}
+	}
+	sb.WriteString("}\n")
+	return sb.String()
+}
+
+var stdLib = map[string]struct{}{
+	"bufio":           {},
+	"bytes":           {},
+	"context":         {},
+	"crypto/md5":      {},
+	"crypto/sha256":   {},
+	"crypto/tls":      {},
+	"crypto/x509":     {},
+	"embed":           {},
+	"encoding/binary": {},
+	"encoding/json":   {},
+	"encoding/xml":    {},
+	"errors":          {},
+	"flag":            {},
+	"fmt":             {},
+	"io":              {},
+	"io/fs":           {},
+	"io/ioutil":       {},
+	"log":             {},
+	"math":            {},
+	"math/rand":       {},
+	"net":             {},
+	"net/http":        {},
+	"net/http/pprof":  {},
+	"net/url":         {},
+	"os":              {},
+	"os/exec":         {},
+	"os/signal":       {},
+	"os/user":         {},
+	"path":            {},
+	"path/filepath":   {},
+	"reflect":         {},
+	"regexp":          {},
+	"runtime":         {},
+	"runtime/debug":   {},
+	"sort":            {},
+	"strconv":         {},
+	"strings":         {},
+	"sync":            {},
+	"sync/atomic":     {},
+	"syscall":         {},
+	"testing":         {},
+	"text/tabwriter":  {},
+	"text/template":   {},
+	"time":            {},
+	"unicode":         {},
+	"unsafe":          {},
+}
+
+func isStdLib(path string) bool {
+	if _, ok := stdLib[path]; ok {
+		return true
+	}
+	if strings.HasPrefix(path, "go/") {
+		return true
+	}
+	return false
+}
+
+func isFake(name string) bool {
+	return name == "fake"
+}
+
+func isMock(name string) bool {
+	return name == "mock"
+}
+
+func isTest(name string) bool {
+	return name == "test"
 }
