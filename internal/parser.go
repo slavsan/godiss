@@ -14,13 +14,13 @@ import (
 var currentFile string
 
 const (
-	noColor = "\033[0m"
-	red     = "\033[0;31m"
-	green   = "\033[0;32m"
-	yellow  = "\033[0;33m"
-	blue    = "\033[0;34m"
-	purple  = "\033[0;35m"
-	cyan    = "\033[0;36m"
+	NoColor = "\033[0m"
+	Red     = "\033[0;31m"
+	Green   = "\033[0;32m"
+	Yellow  = "\033[0;33m"
+	Blue    = "\033[0;34m"
+	Purple  = "\033[0;35m"
+	Cyan    = "\033[0;36m"
 )
 
 type Struct struct {
@@ -642,13 +642,13 @@ func digitsCount(num int) int {
 }
 
 func colorize(path, module string) string {
-	color := noColor
+	color := NoColor
 	if strings.HasPrefix(path, module) {
-		color = green
+		color = Green
 	} else if isStdLib(path) {
-		color = yellow
+		color = Yellow
 	}
-	return fmt.Sprintf("%s%s%s", color, path, noColor)
+	return fmt.Sprintf("%s%s%s", color, path, NoColor)
 }
 
 var stdLib = map[string]struct{}{

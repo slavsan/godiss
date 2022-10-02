@@ -411,6 +411,27 @@ func TestFormatImports(t *testing.T) {
 	}
 }
 
+func TestFormatImportsTable(t *testing.T) {
+	actual, err := internal.LoadPackages("../examples", "", "")
+	assertEqual(t, nil, err)
+	for _, p := range actual {
+		err := internal.ParsePackage(p)
+		assertEqual(t, nil, err)
+	}
+	expected := "" +
+		fmt.Sprintf("1 %sgithub.com/slavsan/gog/examples/cars%s\n", internal.Green, internal.NoColor) +
+		fmt.Sprintf("1 %sgithub.com/slavsan/gog/examples/other%s\n", internal.Green, internal.NoColor) +
+		fmt.Sprintf("1 %ssync%s\n", internal.Yellow, internal.NoColor)
+
+	actualLines := strings.Split(internal.FormatImportsTable(actual, "github.com/slavsan/gog"), "\n")
+	expectedLines := strings.Split(expected, "\n")
+
+	assertEqual(t, len(expectedLines), len(actualLines))
+	for i := range expectedLines {
+		assertEqual(t, expectedLines[i], strings.ReplaceAll(actualLines[i], "\t", "        "), fmt.Sprintf("failed on line %d", i))
+	}
+}
+
 func assertEqual(t *testing.T, expected, actual any, msg ...string) {
 	t.Helper()
 	if !reflect.DeepEqual(expected, actual) {
