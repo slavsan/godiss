@@ -60,6 +60,16 @@ func main() {
 		}
 
 		fmt.Printf("%s\n", internal.FormatImports(packages))
+	case "imports_table":
+		packages, err = internal.LoadPackages(target, module, target)
+		if err != nil {
+			panic(err)
+		}
+		for _, p := range packages {
+			internal.ParsePackage(p)
+		}
+
+		fmt.Printf("%s", internal.FormatImportsTable(packages, module))
 	default:
 		panic(fmt.Sprintf("unknown subcommand: %s", os.Args[1]))
 	}

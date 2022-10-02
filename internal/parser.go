@@ -13,6 +13,16 @@ import (
 
 var currentFile string
 
+const (
+	noColor = "\033[0m"
+	red     = "\033[0;31m"
+	green   = "\033[0;32m"
+	yellow  = "\033[0;33m"
+	blue    = "\033[0;34m"
+	purple  = "\033[0;35m"
+	cyan    = "\033[0;36m"
+)
+
 type Struct struct {
 	Name    string
 	Fields  []*Field
@@ -552,6 +562,93 @@ func FormatImports(packages map[string]*Package) string {
 	}
 	sb.WriteString("}\n")
 	return sb.String()
+}
+
+func FormatImportsTable(packages map[string]*Package, module string) string {
+	var sb strings.Builder
+
+	type Stat struct {
+		Path  string
+		Count int
+	}
+
+	sortedPackages := make([]*Package, 0, len(packages))
+
+	for _, p := range packages {
+		sortedPackages = append(sortedPackages, p)
+	}
+
+	stats := map[string]Stat{}
+
+	for _, pkg := range sortedPackages {
+		unique := map[string]struct{}{}
+		for _, f := range pkg.Files {
+			for _, i := range f.Imports {
+				if _, ok := unique[i.Path]; !ok {
+					unique[i.Path] = struct{}{}
+				}
+			}
+		}
+
+		for p, _ := range unique {
+			if _, ok := stats[p]; ok {
+				stat := stats[p]
+				stat.Count++
+				stats[p] = stat
+			} else {
+				stats[p] = Stat{Path: p, Count: 1}
+			}
+		}
+	}
+
+	sortedStats := make([]Stat, 0, len(stats))
+
+	max := 0
+
+	for _, stat := range stats {
+		if stat.Count > max {
+			max = stat.Count
+		}
+		sortedStats = append(sortedStats, stat)
+	}
+
+	sort.SliceStable(sortedStats, func(i, j int) bool {
+		if sortedStats[i].Count == sortedStats[j].Count {
+			return sortedStats[i].Path < sortedStats[j].Path
+		}
+		return sortedStats[i].Count > sortedStats[j].Count
+	})
+
+	for _, stat := range sortedStats {
+		// if isStdLib(stat.Path) {
+		// 	continue
+		// }
+		sb.WriteString(fmt.Sprintf(
+			"%*d %s\n",
+			digitsCount(max), stat.Count, colorize(stat.Path, module),
+		))
+	}
+
+	return sb.String()
+}
+
+func digitsCount(num int) int {
+	var count int
+	for num > 0 {
+		num = num / 10
+		count++
+	}
+	return count
+}
+
+func colorize(path, module string) string {
+	color := noColor
+	if strings.HasPrefix(path, module) {
+		color = green
+	} else if isStdLib(path) {
+		color = yellow
+	}
+	return fmt.Sprintf("%s%s%s", color, path, noColor)
 }
 
 var stdLib = map[string]struct{}{
