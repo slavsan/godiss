@@ -432,6 +432,78 @@ func TestFormatImportsTable(t *testing.T) {
 	}
 }
 
+func TestFormatTypes(t *testing.T) {
+	actual, err := internal.LoadPackages("../examples", "", "")
+	assertEqual(t, nil, err)
+	for _, p := range actual {
+		err := internal.ParsePackage(p)
+		assertEqual(t, nil, err)
+	}
+	expected := "" +
+		"__YELLOW__../examples__NOCOLOR__\n" +
+		"\n" +
+		"__GREEN__+__NOCOLOR__ type Factory {\n" +
+		"    __GREEN__+__NOCOLOR__ Name string\n" +
+		"}\n" +
+		"\n" +
+		"__GREEN__+__NOCOLOR__ type Manager {\n" +
+		"    __GREEN__+__NOCOLOR__ Pointer *Mechanic\n" +
+		"}\n" +
+		"\n" +
+		"__GREEN__+__NOCOLOR__ type Mechanic {\n" +
+		"    __GREEN__+__NOCOLOR__ Skills []string\n" +
+		"    __GREEN__+__NOCOLOR__ Colleagues []*Mechanic\n" +
+		"}\n" +
+		"\n" +
+		"__RED__-__NOCOLOR__ type tool {\n" +
+		"    __RED__-__NOCOLOR__ name string\n" +
+		"}\n" +
+		"\n" +
+		"__YELLOW__../examples/cars__NOCOLOR__\n" +
+		"\n" +
+		"__GREEN__+__NOCOLOR__ type Camaro {\n" +
+		"    __RED__-__NOCOLOR__ other.Vehicle\n" +
+		"    __GREEN__+__NOCOLOR__ Name string\n" +
+		"    __GREEN__+__NOCOLOR__ Features map[string]int\n" +
+		"    __GREEN__+__NOCOLOR__ Callback func(string, int) (int64, error)\n" +
+		"    __GREEN__+__NOCOLOR__ Fuel interface{}\n" +
+		"    __GREEN__+__NOCOLOR__ ChNoPos chan string\n" +
+		"    __GREEN__+__NOCOLOR__ ChRecv <-chan int32\n" +
+		"    __GREEN__+__NOCOLOR__ ChSend chan<- int32\n" +
+		"    __GREEN__+__NOCOLOR__ Struct struct{ XXX int }\n" +
+		"    __GREEN__+__NOCOLOR__ One string\n" +
+		"    __GREEN__+__NOCOLOR__ Two string\n" +
+		"    __GREEN__+__NOCOLOR__ Ellipsis func(...string)\n" +
+		"    __GREEN__+__NOCOLOR__ ExampleMutex func(sync.Mutex)\n" +
+		"    __GREEN__+__NOCOLOR__ Three sync.Mutex\n" +
+		"    __GREEN__+__NOCOLOR__ Four sync.Mutex\n" +
+		"    __GREEN__+__NOCOLOR__ AnotherStruct struct{  sync.Mutex }\n" +
+		"    __RED__-__NOCOLOR__ sync.Mutex\n" +
+		"}\n" +
+		"\n" +
+		"__YELLOW__../examples/other__NOCOLOR__\n" +
+		"\n" +
+		"__GREEN__+__NOCOLOR__ type Vehicle {\n" +
+		"    __GREEN__+__NOCOLOR__ Doors int\n" +
+		"    __GREEN__+__NOCOLOR__ StartEngine() error\n" +
+		"    __GREEN__+__NOCOLOR__ StopEngine() error\n" +
+		"}\n" +
+		"\n"
+
+	expected = strings.ReplaceAll(expected, "__GREEN__", internal.Green)
+	expected = strings.ReplaceAll(expected, "__YELLOW__", internal.Yellow)
+	expected = strings.ReplaceAll(expected, "__RED__", internal.Red)
+	expected = strings.ReplaceAll(expected, "__NOCOLOR__", internal.NoColor)
+
+	actualLines := strings.Split(internal.FormatTypes(actual, "github.com/slavsan/gog"), "\n")
+	expectedLines := strings.Split(expected, "\n")
+
+	assertEqual(t, len(expectedLines), len(actualLines))
+	for i := range expectedLines {
+		assertEqual(t, expectedLines[i], strings.ReplaceAll(actualLines[i], "\t", "        "), fmt.Sprintf("failed on line %d", i))
+	}
+}
+
 func assertEqual(t *testing.T, expected, actual any, msg ...string) {
 	t.Helper()
 	if !reflect.DeepEqual(expected, actual) {
@@ -509,6 +581,10 @@ func detailed(t *testing.T, expected, actual any, path string) {
 	case reflect.Bool:
 		if value1.Bool() != value2.Bool() {
 			t.Errorf("bools are not the same: %s", path)
+		}
+	case reflect.Int:
+		if value1.Int() != value2.Int() {
+			t.Errorf("ints are not the same: %v != %v %s", value1.Int(), value2.Int(), path)
 		}
 	default:
 		fmt.Printf("UNKNOWN KIND: %s\n", kind1)

@@ -632,6 +632,98 @@ func FormatImportsTable(packages map[string]*Package, module string) string {
 	return sb.String()
 }
 
+func formatStructFieldVisibility(f *Field) string {
+	if len(f.Name) > 0 {
+		return formatTokenVisibility(f.Name)
+	}
+	return formatTokenVisibility(f.Type)
+}
+
+func formatTokenVisibility(token string) string {
+	if ast.IsExported(token) {
+		return fmt.Sprintf("%s+%s ", Green, NoColor)
+	}
+	return fmt.Sprintf("%s-%s ", Red, NoColor)
+}
+
+func formatStructForConsole(s *Struct) string {
+	var sb strings.Builder
+
+	// TODO: sort fields and methods by visibility (or alphabetically, or do no sorting optionally)
+	// TODO: move visibility logic to fields and methods parsing
+	sb.WriteString(fmt.Sprintf("%stype %s {\n", formatTokenVisibility(s.Name), s.Name))
+	for _, f := range s.Fields {
+		if f.Name == "" {
+			sb.WriteString(fmt.Sprintf("    %s%s\n", formatStructFieldVisibility(f), f.Type))
+		} else {
+			sb.WriteString(fmt.Sprintf("    %s%s %s\n", formatStructFieldVisibility(f), f.Name, f.Type))
+		}
+	}
+	for _, m := range s.Methods {
+		sb.WriteString(fmt.Sprintf("    %s%s\n", formatTokenVisibility(m.Signature), m.Signature))
+	}
+	sb.WriteString("}\n")
+
+	return sb.String()
+}
+
+func FormatTypes(packages map[string]*Package, module string) string {
+	var sb strings.Builder
+
+	sortedPackages := make([]*Package, 0, len(packages))
+
+	for _, p := range packages {
+		sortedPackages = append(sortedPackages, p)
+	}
+
+	sort.SliceStable(sortedPackages, func(i, j int) bool {
+		if sortedPackages[i].Name == sortedPackages[j].Name {
+			return sortedPackages[i].Path < sortedPackages[j].Path
+		}
+		return sortedPackages[i].Name < sortedPackages[j].Name
+	})
+
+	for _, pkg := range sortedPackages {
+		sb.WriteString(fmt.Sprintf("%s%s%s\n", Yellow, pkg.ModulePath, NoColor))
+
+		pkgEmpty := true
+
+		sortedFiles := make([]*File, 0, len(pkg.Files))
+
+		for _, f := range pkg.Files {
+			sortedFiles = append(sortedFiles, f)
+		}
+
+		sort.SliceStable(sortedFiles, func(i, j int) bool {
+			return sortedFiles[i].Path < sortedFiles[j].Path
+		})
+
+		for _, f := range sortedFiles {
+
+			sortedStructs := make([]*Struct, 0, len(f.Structs))
+
+			for _, s := range f.Structs {
+				sortedStructs = append(sortedStructs, s)
+			}
+
+			sort.SliceStable(sortedStructs, func(i, j int) bool {
+				return sortedStructs[i].Name < sortedStructs[j].Name
+			})
+
+			for _, s := range sortedStructs {
+				sb.WriteString(fmt.Sprintf("\n%s", formatStructForConsole(s)))
+				pkgEmpty = false
+			}
+		}
+
+		if !pkgEmpty {
+			sb.WriteString("\n")
+		}
+	}
+
+	return sb.String()
+}
+
 func digitsCount(num int) int {
 	var count int
 	for num > 0 {
