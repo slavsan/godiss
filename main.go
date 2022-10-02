@@ -32,7 +32,7 @@ func main() {
 	}
 
 	var structs []*internal.Struct
-	var packages map[string]*internal.Package
+	var directories map[string]*internal.Directory
 
 	switch os.Args[1] {
 	case "structs":
@@ -42,44 +42,54 @@ func main() {
 		}
 		fmt.Println(internal.Format(structs))
 	case "packages":
-		packages, err = internal.LoadPackages(target, module, target)
+		directories, err = internal.LoadPackages(target, module, target)
 		if err != nil {
 			panic(err)
 		}
-		for _, p := range packages {
-			internal.ParsePackage(p)
+		for _, directory := range directories {
+			internal.ParsePackage(directory, module, target)
 		}
-		fmt.Println(internal.FormatPackages(packages))
+		fmt.Println(internal.FormatPackages(directories))
 	case "imports":
-		packages, err = internal.LoadPackages(target, module, target)
+		directories, err = internal.LoadPackages(target, module, target)
 		if err != nil {
 			panic(err)
 		}
-		for _, p := range packages {
-			internal.ParsePackage(p)
+		for _, directory := range directories {
+			internal.ParsePackage(directory, module, target)
 		}
 
-		fmt.Printf("%s\n", internal.FormatImports(packages))
+		fmt.Printf("%s\n", internal.FormatImports(directories))
 	case "imports_table":
-		packages, err = internal.LoadPackages(target, module, target)
+		directories, err = internal.LoadPackages(target, module, target)
 		if err != nil {
 			panic(err)
 		}
-		for _, p := range packages {
-			internal.ParsePackage(p)
+		for _, directory := range directories {
+			internal.ParsePackage(directory, module, target)
 		}
 
-		fmt.Printf("%s", internal.FormatImportsTable(packages, module))
+		fmt.Printf("%s", internal.FormatImportsTable(directories, module))
 	case "types":
-		packages, err = internal.LoadPackages(target, module, target)
+		directories, err = internal.LoadPackages(target, module, target)
 		if err != nil {
 			panic(err)
 		}
-		for _, p := range packages {
-			internal.ParsePackage(p)
+		for _, p := range directories {
+			internal.ParsePackage(p, module, target)
 		}
 
-		fmt.Printf("%s", internal.FormatTypes(packages, module))
+		fmt.Printf("%s", internal.FormatTypes(directories, module))
+	case "entrypoints":
+		directories, err = internal.LoadPackages(target, module, target)
+		if err != nil {
+			panic(err)
+		}
+		for _, directory := range directories {
+			internal.ParsePackage(directory, module, target)
+		}
+
+		fmt.Printf("%s", internal.FormatEntrypoints(directories, module))
 	default:
 		panic(fmt.Sprintf("unknown subcommand: %s", os.Args[1]))
 	}

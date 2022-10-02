@@ -51,6 +51,11 @@ type File struct {
 	Imports         []*Import
 }
 
+type Directory struct {
+	Path     string
+	Packages map[string]*Package
+}
+
 type Package struct {
 	Name       string
 	Path       string
@@ -58,8 +63,8 @@ type Package struct {
 	Files      []*File
 }
 
-func ParsePackage(pkg *Package) error {
-	path := pkg.Path
+func ParsePackage(directory *Directory, module, target string) error {
+	path := directory.Path
 
 	fset := token.NewFileSet()
 	pkgMap, err := parser.ParseDir(fset, path, nil, parser.ParseComments)
@@ -68,12 +73,20 @@ func ParsePackage(pkg *Package) error {
 	}
 
 	for pkgName, astPkg := range pkgMap {
+		pkg := &Package{}
+
 		if strings.HasSuffix(pkgName, "_test") {
 			continue
 		}
 
+		modulePath := fmt.Sprintf(
+			"%s%s",
+			module, strings.TrimPrefix(directory.Path, target),
+		)
+		pkg.ModulePath = modulePath
+
 		if hasBuldConstraint(astPkg) {
-			continue
+			// continue
 		}
 
 		pkg.Name = pkgName
@@ -118,6 +131,11 @@ func ParsePackage(pkg *Package) error {
 					var receiver string
 					switch t := v.Recv.List[0].Type.(type) {
 					case *ast.StarExpr:
+						if indexExpr, ok := t.X.(*ast.IndexExpr); ok {
+							receiver = indexExpr.X.(*ast.Ident).Name
+							continue
+						}
+
 						receiver = t.X.(*ast.Ident).Name
 					case *ast.Ident:
 						receiver = t.Name
@@ -165,13 +183,14 @@ func ParsePackage(pkg *Package) error {
 		}
 
 		pkg.Files = files
+		directory.Packages[pkgName] = pkg
 	}
 
 	return nil
 }
 
-func LoadPackages(path, module, target string) (map[string]*Package, error) {
-	res := map[string]*Package{}
+func LoadPackages(path, module, target string) (map[string]*Directory, error) {
+	res := map[string]*Directory{}
 
 	err := filepath.Walk(
 		path,
@@ -187,13 +206,9 @@ func LoadPackages(path, module, target string) (map[string]*Package, error) {
 				if strings.Contains(p, ".git") {
 					return nil
 				}
-				modulePath := fmt.Sprintf(
-					"%s%s",
-					module, strings.TrimPrefix(p, target),
-				)
-				res[p] = &Package{
-					Path:       p,
-					ModulePath: modulePath,
+				res[p] = &Directory{
+					Path:     p,
+					Packages: map[string]*Package{},
 				}
 			}
 			return nil
@@ -340,7 +355,7 @@ func getStructFields(fl *ast.FieldList) string {
 	return strings.Join(fields, ", ")
 }
 
-func FormatPackages(packages map[string]*Package) string {
+func FormatPackages(directories map[string]*Directory) string {
 	var sb strings.Builder
 	sb.WriteString("digraph {\n")
 	sb.WriteString(`    graph [
@@ -362,30 +377,43 @@ func FormatPackages(packages map[string]*Package) string {
     ]
 `)
 
-	sortedPackages := []*Package{}
+	sortedDirectories := []*Directory{}
 
-	for _, p := range packages {
-		sortedPackages = append(sortedPackages, p)
+	for _, p := range directories {
+		sortedDirectories = append(sortedDirectories, p)
 	}
 
-	sort.SliceStable(sortedPackages, func(i, j int) bool {
-		if sortedPackages[i].Name == sortedPackages[j].Name {
-			return sortedPackages[i].Path < sortedPackages[j].Path
-		}
-		return sortedPackages[i].Name < sortedPackages[j].Name
+	sort.SliceStable(sortedDirectories, func(i, j int) bool {
+		return sortedDirectories[i].Path < sortedDirectories[j].Path
 	})
 
-	for _, pkg := range sortedPackages {
-		pkgName := pkg.Path
-		sb.WriteString(fmt.Sprintf("\n    subgraph cluster_%s {", normalizePackageName(pkgName)))
-		sb.WriteString(fmt.Sprintf("\n        label = \"%s\"", pkgName))
-		sb.WriteString("\n")
-		for _, f := range pkg.Files {
-			for _, s := range f.Structs {
-				formatStruct(&sb, s, true)
-			}
+	for _, directory := range sortedDirectories {
+		sortedPackages := []*Package{}
+
+		for _, p := range directory.Packages {
+			sortedPackages = append(sortedPackages, p)
 		}
-		sb.WriteString("    }\n")
+
+		sort.SliceStable(sortedPackages, func(i, j int) bool {
+			if sortedPackages[i].Name == sortedPackages[j].Name {
+				return sortedPackages[i].Path < sortedPackages[j].Path
+			}
+			return sortedPackages[i].Name < sortedPackages[j].Name
+		})
+
+		for _, pkg := range sortedPackages {
+			pkgName := pkg.Path
+			_ = pkgName
+			sb.WriteString(fmt.Sprintf("\n    subgraph cluster_%s {", normalizePackageName(directory.Path)))
+			sb.WriteString(fmt.Sprintf("\n        label = \"%s\"", directory.Path))
+			sb.WriteString("\n")
+			for _, f := range pkg.Files {
+				for _, s := range f.Structs {
+					formatStruct(&sb, s, true)
+				}
+			}
+			sb.WriteString("    }\n")
+		}
 	}
 
 	sb.WriteString("}\n")
@@ -516,55 +544,68 @@ func normalizePackageName(name string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(name, "/", "_"), ".", "_"), "-", "_")
 }
 
-func FormatImports(packages map[string]*Package) string {
+func FormatImports(directories map[string]*Directory) string {
 	var sb strings.Builder
 	sb.WriteString("digraph {\n")
 	sb.WriteString("    rankdir=\"LR\"\n\n")
-	sortedPackages := make([]*Package, 0, len(packages))
 
-	for _, p := range packages {
-		sortedPackages = append(sortedPackages, p)
+	sortedDirectories := make([]*Directory, 0, len(directories))
+
+	for _, p := range directories {
+		sortedDirectories = append(sortedDirectories, p)
 	}
 
-	sort.SliceStable(sortedPackages, func(i, j int) bool {
-		if sortedPackages[i].Name == sortedPackages[j].Name {
-			return sortedPackages[i].Path < sortedPackages[j].Path
-		}
-		return sortedPackages[i].Name < sortedPackages[j].Name
+	sort.SliceStable(sortedDirectories, func(i, j int) bool {
+		return sortedDirectories[i].Path < sortedDirectories[j].Path
 	})
 
-	for _, pkg := range sortedPackages {
-		if isFake(pkg.Name) || isMock(pkg.Name) || isTest(pkg.Name) {
-			continue
+	for _, directory := range sortedDirectories {
+		sortedPackages := make([]*Package, 0, len(directory.Packages))
+
+		for _, p := range directory.Packages {
+			sortedPackages = append(sortedPackages, p)
 		}
 
-		unique := map[string]struct{}{}
-		for _, f := range pkg.Files {
-			for _, i := range f.Imports {
-				if _, ok := unique[i.Path]; !ok {
-					unique[i.Path] = struct{}{}
-				}
+		sort.SliceStable(sortedPackages, func(i, j int) bool {
+			if sortedPackages[i].Name == sortedPackages[j].Name {
+				return sortedPackages[i].Path < sortedPackages[j].Path
 			}
-		}
-		sortedUnique := make([]string, 0, len(unique))
-		for i, _ := range unique {
-			sortedUnique = append(sortedUnique, i)
-		}
-		sort.Strings(sortedUnique)
+			return sortedPackages[i].Name < sortedPackages[j].Name
+		})
 
-		for _, i := range sortedUnique {
-			if isStdLib(strings.ReplaceAll(i, "\"", "")) {
+		for _, pkg := range sortedPackages {
+			if isFake(pkg.Name) || isMock(pkg.Name) || isTest(pkg.Name) {
 				continue
 			}
 
-			sb.WriteString(fmt.Sprintf("    \"%s\" -> \"%s\"\n", pkg.ModulePath, i))
+			unique := map[string]struct{}{}
+			for _, f := range pkg.Files {
+				for _, i := range f.Imports {
+					if _, ok := unique[i.Path]; !ok {
+						unique[i.Path] = struct{}{}
+					}
+				}
+			}
+			sortedUnique := make([]string, 0, len(unique))
+			for i, _ := range unique {
+				sortedUnique = append(sortedUnique, i)
+			}
+			sort.Strings(sortedUnique)
+
+			for _, i := range sortedUnique {
+				if isStdLib(strings.ReplaceAll(i, "\"", "")) {
+					continue
+				}
+
+				sb.WriteString(fmt.Sprintf("    \"%s\" -> \"%s\"\n", pkg.ModulePath, i))
+			}
 		}
 	}
 	sb.WriteString("}\n")
 	return sb.String()
 }
 
-func FormatImportsTable(packages map[string]*Package, module string) string {
+func FormatImportsTable(directories map[string]*Directory, module string) string {
 	var sb strings.Builder
 
 	type Stat struct {
@@ -572,31 +613,39 @@ func FormatImportsTable(packages map[string]*Package, module string) string {
 		Count int
 	}
 
-	sortedPackages := make([]*Package, 0, len(packages))
+	sortedDirectories := make([]*Directory, 0, len(directories))
 
-	for _, p := range packages {
-		sortedPackages = append(sortedPackages, p)
+	for _, p := range directories {
+		sortedDirectories = append(sortedDirectories, p)
 	}
 
 	stats := map[string]Stat{}
 
-	for _, pkg := range sortedPackages {
-		unique := map[string]struct{}{}
-		for _, f := range pkg.Files {
-			for _, i := range f.Imports {
-				if _, ok := unique[i.Path]; !ok {
-					unique[i.Path] = struct{}{}
-				}
-			}
+	for _, directory := range sortedDirectories {
+		sortedPackages := make([]*Package, 0, len(directory.Packages))
+
+		for _, p := range directory.Packages {
+			sortedPackages = append(sortedPackages, p)
 		}
 
-		for p, _ := range unique {
-			if _, ok := stats[p]; ok {
-				stat := stats[p]
-				stat.Count++
-				stats[p] = stat
-			} else {
-				stats[p] = Stat{Path: p, Count: 1}
+		for _, pkg := range sortedPackages {
+			unique := map[string]struct{}{}
+			for _, f := range pkg.Files {
+				for _, i := range f.Imports {
+					if _, ok := unique[i.Path]; !ok {
+						unique[i.Path] = struct{}{}
+					}
+				}
+			}
+
+			for p, _ := range unique {
+				if _, ok := stats[p]; ok {
+					stat := stats[p]
+					stat.Count++
+					stats[p] = stat
+				} else {
+					stats[p] = Stat{Path: p, Count: 1}
+				}
 			}
 		}
 	}
@@ -667,57 +716,110 @@ func formatStructForConsole(s *Struct) string {
 	return sb.String()
 }
 
-func FormatTypes(packages map[string]*Package, module string) string {
+func FormatEntrypoints(directories map[string]*Directory, module string) string {
 	var sb strings.Builder
 
-	sortedPackages := make([]*Package, 0, len(packages))
+	sortedDirectories := make([]*Directory, 0, len(directories))
 
-	for _, p := range packages {
-		sortedPackages = append(sortedPackages, p)
+	for _, p := range directories {
+		sortedDirectories = append(sortedDirectories, p)
 	}
 
-	sort.SliceStable(sortedPackages, func(i, j int) bool {
-		if sortedPackages[i].Name == sortedPackages[j].Name {
-			return sortedPackages[i].Path < sortedPackages[j].Path
-		}
-		return sortedPackages[i].Name < sortedPackages[j].Name
+	sort.SliceStable(sortedDirectories, func(i, j int) bool {
+		return sortedDirectories[i].Path < sortedDirectories[j].Path
 	})
 
-	for _, pkg := range sortedPackages {
-		sb.WriteString(fmt.Sprintf("%s%s%s\n", Yellow, pkg.ModulePath, NoColor))
+	for _, directory := range sortedDirectories {
+		sortedPackages := make([]*Package, 0, len(directory.Packages))
 
-		pkgEmpty := true
-
-		sortedFiles := make([]*File, 0, len(pkg.Files))
-
-		for _, f := range pkg.Files {
-			sortedFiles = append(sortedFiles, f)
+		for _, p := range directory.Packages {
+			sortedPackages = append(sortedPackages, p)
 		}
 
-		sort.SliceStable(sortedFiles, func(i, j int) bool {
-			return sortedFiles[i].Path < sortedFiles[j].Path
+		sort.SliceStable(sortedPackages, func(i, j int) bool {
+			if sortedPackages[i].Name == sortedPackages[j].Name {
+				return sortedPackages[i].Path < sortedPackages[j].Path
+			}
+			return sortedPackages[i].Name < sortedPackages[j].Name
 		})
 
-		for _, f := range sortedFiles {
-
-			sortedStructs := make([]*Struct, 0, len(f.Structs))
-
-			for _, s := range f.Structs {
-				sortedStructs = append(sortedStructs, s)
-			}
-
-			sort.SliceStable(sortedStructs, func(i, j int) bool {
-				return sortedStructs[i].Name < sortedStructs[j].Name
-			})
-
-			for _, s := range sortedStructs {
-				sb.WriteString(fmt.Sprintf("\n%s", formatStructForConsole(s)))
-				pkgEmpty = false
+		for _, pkg := range sortedPackages {
+			// if pkg.Name == "main" {
+			// 	sb.WriteString(fmt.Sprintf("%s\n", pkg.ModulePath))
+			// }
+			for _, f := range pkg.Files {
+				if strings.HasSuffix(f.Path, "/main.go") {
+					sb.WriteString(fmt.Sprintf("%s\n", f.Path))
+				}
 			}
 		}
+	}
 
-		if !pkgEmpty {
-			sb.WriteString("\n")
+	return sb.String()
+}
+
+func FormatTypes(directories map[string]*Directory, module string) string {
+	var sb strings.Builder
+
+	sortedDirectories := make([]*Directory, 0, len(directories))
+
+	for _, p := range directories {
+		sortedDirectories = append(sortedDirectories, p)
+	}
+
+	sort.SliceStable(sortedDirectories, func(i, j int) bool {
+		return sortedDirectories[i].Path < sortedDirectories[j].Path
+	})
+
+	for _, directory := range sortedDirectories {
+		sortedPackages := make([]*Package, 0, len(directory.Packages))
+
+		for _, p := range directory.Packages {
+			sortedPackages = append(sortedPackages, p)
+		}
+
+		sort.SliceStable(sortedPackages, func(i, j int) bool {
+			if sortedPackages[i].Name == sortedPackages[j].Name {
+				return sortedPackages[i].Path < sortedPackages[j].Path
+			}
+			return sortedPackages[i].Name < sortedPackages[j].Name
+		})
+
+		for _, pkg := range sortedPackages {
+			sb.WriteString(fmt.Sprintf("%s%s%s\n", Yellow, pkg.ModulePath, NoColor))
+
+			pkgEmpty := true
+
+			sortedFiles := make([]*File, 0, len(pkg.Files))
+
+			for _, f := range pkg.Files {
+				sortedFiles = append(sortedFiles, f)
+			}
+
+			sort.SliceStable(sortedFiles, func(i, j int) bool {
+				return sortedFiles[i].Path < sortedFiles[j].Path
+			})
+
+			for _, f := range sortedFiles {
+				sortedStructs := make([]*Struct, 0, len(f.Structs))
+
+				for _, s := range f.Structs {
+					sortedStructs = append(sortedStructs, s)
+				}
+
+				sort.SliceStable(sortedStructs, func(i, j int) bool {
+					return sortedStructs[i].Name < sortedStructs[j].Name
+				})
+
+				for _, s := range sortedStructs {
+					sb.WriteString(fmt.Sprintf("\n%s", formatStructForConsole(s)))
+					pkgEmpty = false
+				}
+			}
+
+			if !pkgEmpty {
+				sb.WriteString("\n")
+			}
 		}
 	}
 

@@ -131,82 +131,64 @@ func TestFormatStructs(t *testing.T) {
 func TestLoadPackages(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	for _, p := range actual {
-		err := internal.ParsePackage(p)
+		err := internal.ParsePackage(p, "", "")
 		assertEqual(t, nil, err)
 	}
-	expected := map[string]*internal.Package{
-		"../examples": {
-			Name:       "auto",
-			Path:       "../examples",
-			ModulePath: "../examples",
-			Files: []*internal.File{
-				{
-					Path: "../examples/factory.go",
-					Imports: []*internal.Import{
-						{Name: "carmodel", Path: "github.com/slavsan/gog/examples/cars"},
-					},
-					Structs: []*internal.Struct{
+	expected := map[string]*internal.Directory{
+		"../examples/cars": {
+			Path: "../examples/cars",
+			Packages: map[string]*internal.Package{
+				"cars": {
+					Name:       "cars",
+					ModulePath: "../examples/cars",
+					Files: []*internal.File{
 						{
-							Name: "Factory",
-							Fields: []*internal.Field{
-								{Name: "Name", Type: "string"},
+							Path: "../examples/cars/car.go",
+							Imports: []*internal.Import{
+								{Name: "", Path: "sync", StdLib: true},
+								{Name: "", Path: "github.com/slavsan/gog/examples/other", StdLib: false},
 							},
-						},
-						{
-							Name: "Mechanic",
-							Fields: []*internal.Field{
-								{Name: "Skills", Type: "[]string"},
-								{Name: "Colleagues", Type: "[]*Mechanic"},
-							},
-						},
-						{
-							Name: "Manager",
-							Fields: []*internal.Field{
-								{Name: "Pointer", Type: "*Mechanic"},
-							},
-						},
-						{
-							Name: "tool",
-							Fields: []*internal.Field{
-								{Name: "name", Type: "string"},
+							Structs: []*internal.Struct{
+								{
+									Name: "Camaro",
+									Fields: []*internal.Field{
+										{Name: "", Type: "other.Vehicle"},
+										{Name: "Name", Type: "string"},
+										{Name: "Features", Type: "map[string]int"},
+										{Name: "Callback", Type: "func(string, int) (int64, error)"},
+										{Name: "Fuel", Type: "interface{}"},
+										{Name: "ChNoPos", Type: "chan string"},
+										{Name: "ChRecv", Type: "<-chan int32"},
+										{Name: "ChSend", Type: "chan<- int32"},
+										{Name: "Struct", Type: "struct{ XXX int }"},
+										{Name: "One", Type: "string"},
+										{Name: "Two", Type: "string"},
+										{Name: "Ellipsis", Type: "func(...string)"},
+										{Name: "ExampleMutex", Type: "func(sync.Mutex)"},
+										{Name: "Three", Type: "sync.Mutex"},
+										{Name: "Four", Type: "sync.Mutex"},
+										{Name: "AnotherStruct", Type: "struct{  sync.Mutex }"},
+										{Name: "", Type: "sync.Mutex"},
+									},
+								},
 							},
 						},
 					},
 				},
-			},
-		},
-		"../examples/cars": {
-			Name:       "cars",
-			Path:       "../examples/cars",
-			ModulePath: "../examples/cars",
-			Files: []*internal.File{
-				{
-					Path: "../examples/cars/car.go",
-					Imports: []*internal.Import{
-						{Name: "", Path: "sync", StdLib: true},
-						{Name: "", Path: "github.com/slavsan/gog/examples/other", StdLib: false},
-					},
-					Structs: []*internal.Struct{
+				"main": {
+					Name:       "main",
+					ModulePath: "../examples/cars",
+					Files: []*internal.File{
 						{
-							Name: "Camaro",
-							Fields: []*internal.Field{
-								{Name: "", Type: "other.Vehicle"},
-								{Name: "Name", Type: "string"},
-								{Name: "Features", Type: "map[string]int"},
-								{Name: "Callback", Type: "func(string, int) (int64, error)"},
-								{Name: "Fuel", Type: "interface{}"},
-								{Name: "ChNoPos", Type: "chan string"},
-								{Name: "ChRecv", Type: "<-chan int32"},
-								{Name: "ChSend", Type: "chan<- int32"},
-								{Name: "Struct", Type: "struct{ XXX int }"},
-								{Name: "One", Type: "string"},
-								{Name: "Two", Type: "string"},
-								{Name: "Ellipsis", Type: "func(...string)"},
-								{Name: "ExampleMutex", Type: "func(sync.Mutex)"},
-								{Name: "Three", Type: "sync.Mutex"},
-								{Name: "Four", Type: "sync.Mutex"},
-								{Name: "AnotherStruct", Type: "struct{  sync.Mutex }"},
-								{Name: "", Type: "sync.Mutex"},
+							Path:    "../examples/cars/main.go",
+							Imports: []*internal.Import{},
+							Structs: []*internal.Struct{
+								{
+									Name: "Foo",
+									Fields: []*internal.Field{
+										{Name: "Bar", Type: "string"},
+									},
+								},
 							},
 						},
 					},
@@ -214,22 +196,70 @@ func TestLoadPackages(t *testing.T) {
 			},
 		},
 		"../examples/other": {
-			Name:       "other",
-			Path:       "../examples/other",
-			ModulePath: "../examples/other",
-			Files: []*internal.File{
-				{
-					Path:    "../examples/other/vehicle.go",
-					Imports: []*internal.Import{},
-					Structs: []*internal.Struct{
+			Path: "../examples/other",
+			Packages: map[string]*internal.Package{
+				"other": {
+					Name:       "other",
+					ModulePath: "../examples/other",
+					Files: []*internal.File{
 						{
-							Name: "Vehicle",
-							Fields: []*internal.Field{
-								{Name: "Doors", Type: "int"},
+							Path:    "../examples/other/vehicle.go",
+							Imports: []*internal.Import{},
+							Structs: []*internal.Struct{
+								{
+									Name: "Vehicle",
+									Fields: []*internal.Field{
+										{Name: "Doors", Type: "int"},
+									},
+									Methods: []*internal.Method{
+										{Signature: "StartEngine() error"},
+										{Signature: "StopEngine() error"},
+									},
+								},
 							},
-							Methods: []*internal.Method{
-								{Signature: "StartEngine() error"},
-								{Signature: "StopEngine() error"},
+						},
+					},
+				},
+			},
+		},
+		"../examples": {
+			Path: "../examples",
+			Packages: map[string]*internal.Package{
+				"auto": {
+					Name:       "auto",
+					ModulePath: "../examples",
+					Files: []*internal.File{
+						{
+							Path: "../examples/factory.go",
+							Imports: []*internal.Import{
+								{Name: "carmodel", Path: "github.com/slavsan/gog/examples/cars", StdLib: false},
+							},
+							Structs: []*internal.Struct{
+								{
+									Name: "Factory",
+									Fields: []*internal.Field{
+										{Name: "Name", Type: "string"},
+									},
+								},
+								{
+									Name: "Mechanic",
+									Fields: []*internal.Field{
+										{Name: "Skills", Type: "[]string"},
+										{Name: "Colleagues", Type: "[]*Mechanic"},
+									},
+								},
+								{
+									Name: "Manager",
+									Fields: []*internal.Field{
+										{Name: "Pointer", Type: "*Mechanic"},
+									},
+								},
+								{
+									Name: "tool",
+									Fields: []*internal.Field{
+										{Name: "name", Type: "string"},
+									},
+								},
 							},
 						},
 					},
@@ -245,7 +275,7 @@ func TestFormatPackages(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	assertEqual(t, nil, err)
 	for _, p := range actual {
-		err := internal.ParsePackage(p)
+		err := internal.ParsePackage(p, "", "")
 		assertEqual(t, nil, err)
 	}
 	expected := `digraph {
@@ -357,6 +387,23 @@ func TestFormatPackages(t *testing.T) {
         ]
     }
 
+    subgraph cluster____examples_cars {
+        label = "../examples/cars"
+
+        "Foo" [
+            fillcolor="#88ff0022"
+            label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+                <tr><td port="push" sides="ltr"><b>Foo</b></td></tr>
+                <tr><td port="switch" align="left">
+                    Bar string<br/>
+                </td></tr>
+                <tr><td port="switch" align="left">
+                </td></tr>
+            </table>>
+            shape=plain
+        ]
+    }
+
     subgraph cluster____examples_other {
         label = "../examples/other"
 
@@ -391,7 +438,7 @@ func TestFormatImports(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	assertEqual(t, nil, err)
 	for _, p := range actual {
-		err := internal.ParsePackage(p)
+		err := internal.ParsePackage(p, "", "")
 		assertEqual(t, nil, err)
 	}
 	expected := `digraph {
@@ -415,7 +462,7 @@ func TestFormatImportsTable(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	assertEqual(t, nil, err)
 	for _, p := range actual {
-		err := internal.ParsePackage(p)
+		err := internal.ParsePackage(p, "", "")
 		assertEqual(t, nil, err)
 	}
 	expected := "" +
@@ -436,7 +483,7 @@ func TestFormatTypes(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	assertEqual(t, nil, err)
 	for _, p := range actual {
-		err := internal.ParsePackage(p)
+		err := internal.ParsePackage(p, "", "")
 		assertEqual(t, nil, err)
 	}
 	expected := "" +
@@ -479,6 +526,12 @@ func TestFormatTypes(t *testing.T) {
 		"    __GREEN__+__NOCOLOR__ Four sync.Mutex\n" +
 		"    __GREEN__+__NOCOLOR__ AnotherStruct struct{  sync.Mutex }\n" +
 		"    __RED__-__NOCOLOR__ sync.Mutex\n" +
+		"}\n" +
+		"\n" +
+		"__YELLOW__../examples/cars__NOCOLOR__\n" +
+		"\n" +
+		"__GREEN__+__NOCOLOR__ type Foo {\n" +
+		"    __GREEN__+__NOCOLOR__ Bar string\n" +
 		"}\n" +
 		"\n" +
 		"__YELLOW__../examples/other__NOCOLOR__\n" +
@@ -538,7 +591,10 @@ func detailed(t *testing.T, expected, actual any, path string) {
 	kind1 := value1.Kind()
 	kind2 := value2.Kind()
 	if kind1 != kind2 {
-		t.Errorf("diff: %s - %s", kind1, kind2)
+		t.Errorf(
+			"diff: %s (%#v) - %s (%#v) (%s)",
+			kind1, expected, kind2, actual, path,
+		)
 	}
 	switch kind1 {
 	case reflect.Pointer:
@@ -552,6 +608,12 @@ func detailed(t *testing.T, expected, actual any, path string) {
 			detailed(t, value1.Field(i), value2.Field(i), fmt.Sprintf("%s%s.%s", path, value1.Type().String(), value1.Type().Field(i).Name))
 		}
 	case reflect.Slice:
+		if value1.IsNil() != value2.IsNil() {
+			t.Errorf(
+				"one slice is nil whilst the other is not: %s\n\texpected: %#v\n%s\n\t  actual: %#v\n%s\n",
+				path, value1, expand(value1), value2, expand(value2),
+			)
+		}
 		if value1.Len() != value2.Len() {
 			t.Errorf(
 				"slices have different lengths: %s\n\texpected: %#v\n%s\n\t  actual: %#v\n%s\n",
@@ -565,11 +627,11 @@ func detailed(t *testing.T, expected, actual any, path string) {
 		keys1 := value1.MapKeys()
 		keys2 := value2.MapKeys()
 		if len(keys1) != len(keys2) {
-			t.Errorf("map keys have different lenghts: %s", path)
+			t.Errorf("map keys have different lenghts: %v != %v (%s)", keys1, keys2, path)
 			return
 		}
 		for _, v := range value1.MapKeys() {
-			detailed(t, value1.MapIndex(v), value2.MapIndex(v), fmt.Sprintf("%smap[\"%s\"]", path, v))
+			detailed(t, value1.MapIndex(v), value2.MapIndex(v), fmt.Sprintf("%s.map[\"%s\"]", path, v))
 		}
 	case reflect.String:
 		if value1.String() != value2.String() {
