@@ -39,7 +39,9 @@ func types() *Command {
 			}
 
 			for _, p := range directories {
-				internal.ParsePackage(p, module, target, internal.NewConfig(exclude))
+				internal.ParsePackage(p, module, target, &internal.Config{
+					Exclude: createSet(exclude),
+				})
 			}
 
 			fmt.Printf("%s", internal.FormatTypes(directories, module))

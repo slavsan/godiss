@@ -85,13 +85,8 @@ type Package struct {
 }
 
 type Config struct {
-	Exclude map[string]struct{}
-}
-
-func NewConfig(exclude string) *Config {
-	return &Config{
-		Exclude: createSet(exclude),
-	}
+	Exclude       map[string]struct{}
+	ExcludeStdLib bool
 }
 
 type Set map[string]struct{}
@@ -605,7 +600,7 @@ func FormatImports(directories map[string]*Directory) string {
 	return sb.String()
 }
 
-func FormatImportsTable(directories map[string]*Directory, module string) string {
+func FormatImportsTable(directories map[string]*Directory, module string, config *Config) string {
 	var sb strings.Builder
 
 	type Stat struct {
@@ -657,9 +652,9 @@ func FormatImportsTable(directories map[string]*Directory, module string) string
 	})
 
 	for _, stat := range sortedStats {
-		// if isStdLib(stat.Path) {
-		// 	continue
-		// }
+		if config.ExcludeStdLib && isStdLib(stat.Path) {
+			continue
+		}
 		sb.WriteString(fmt.Sprintf(
 			"%*d %s\n",
 			digitsCount(max), stat.Count, colorize(stat.Path, module),

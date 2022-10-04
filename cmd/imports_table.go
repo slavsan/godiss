@@ -3,19 +3,26 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/slavsan/gog/internal"
 )
 
 func imports_table() *Command {
-	return &Command{
+	var command *Command
+	command = &Command{
 		Name:        "imports_table",
 		Description: "Display imports (in a table)",
+		Flags: map[string]*Flag{
+			"nostdlib": {false, "exclude stdlib packages"},
+		},
 		Run: func(args []string) error {
 			var target string
 			var module string
 			var err error
 			var directories map[string]*internal.Directory
+
+			excludeStdLib := command.Flags["nostdlib"].Value.(bool)
 
 			target, err = filepath.Abs(args[0])
 			if err != nil {
@@ -32,13 +39,27 @@ func imports_table() *Command {
 				panic(err)
 			}
 
-			for _, directory := range directories {
-				internal.ParsePackage(directory, module, target, &internal.Config{})
+			config := &internal.Config{
+				ExcludeStdLib: excludeStdLib,
 			}
 
-			fmt.Printf("%s", internal.FormatImportsTable(directories, module))
+			for _, directory := range directories {
+				internal.ParsePackage(directory, module, target, config)
+			}
+
+			fmt.Printf("%s", internal.FormatImportsTable(directories, module, config))
 
 			return nil
 		},
 	}
+	return command
+}
+
+func createSet(value string) map[string]struct{} {
+	items := strings.Split(value, ",")
+	set := make(map[string]struct{}, len(items))
+	for _, i := range items {
+		set[i] = struct{}{}
+	}
+	return set
 }

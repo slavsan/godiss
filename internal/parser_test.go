@@ -131,7 +131,7 @@ func TestFormatStructs(t *testing.T) {
 func TestLoadPackages(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	for _, p := range actual {
-		err := internal.ParsePackage(p, "", "")
+		err := internal.ParsePackage(p, "", "", &internal.Config{})
 		assertEqual(t, nil, err)
 	}
 	expected := map[string]*internal.Directory{
@@ -276,7 +276,7 @@ func TestFormatPackages(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	assertEqual(t, nil, err)
 	for _, p := range actual {
-		err := internal.ParsePackage(p, "", "")
+		err := internal.ParsePackage(p, "", "", &internal.Config{})
 		assertEqual(t, nil, err)
 	}
 	expected := `digraph {
@@ -439,7 +439,7 @@ func TestFormatImports(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	assertEqual(t, nil, err)
 	for _, p := range actual {
-		err := internal.ParsePackage(p, "", "")
+		err := internal.ParsePackage(p, "", "", &internal.Config{})
 		assertEqual(t, nil, err)
 	}
 	expected := `digraph {
@@ -463,7 +463,7 @@ func TestFormatImportsTable(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	assertEqual(t, nil, err)
 	for _, p := range actual {
-		err := internal.ParsePackage(p, "", "")
+		err := internal.ParsePackage(p, "", "", &internal.Config{})
 		assertEqual(t, nil, err)
 	}
 	expected := "" +
@@ -471,7 +471,7 @@ func TestFormatImportsTable(t *testing.T) {
 		fmt.Sprintf("1 %sgithub.com/slavsan/gog/examples/other%s\n", internal.Green, internal.NoColor) +
 		fmt.Sprintf("1 %ssync%s\n", internal.Yellow, internal.NoColor)
 
-	actualLines := strings.Split(internal.FormatImportsTable(actual, "github.com/slavsan/gog"), "\n")
+	actualLines := strings.Split(internal.FormatImportsTable(actual, "github.com/slavsan/gog", &internal.Config{}), "\n")
 	expectedLines := strings.Split(expected, "\n")
 
 	assertEqual(t, len(expectedLines), len(actualLines))
@@ -484,7 +484,7 @@ func TestFormatTypes(t *testing.T) {
 	actual, err := internal.LoadPackages("../examples", "", "")
 	assertEqual(t, nil, err)
 	for _, p := range actual {
-		err := internal.ParsePackage(p, "", "")
+		err := internal.ParsePackage(p, "", "", &internal.Config{})
 		assertEqual(t, nil, err)
 	}
 	expected := "" +
