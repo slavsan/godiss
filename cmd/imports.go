@@ -33,7 +33,7 @@ func imports() *Command {
 			}
 
 			for _, directory := range directories {
-				internal.ParsePackage(directory, module, target)
+				internal.ParsePackage(directory, module, target, &internal.Config{})
 			}
 
 			fmt.Printf("%s\n", internal.FormatImports(directories))

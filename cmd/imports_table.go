@@ -33,7 +33,7 @@ func imports_table() *Command {
 			}
 
 			for _, directory := range directories {
-				internal.ParsePackage(directory, module, target)
+				internal.ParsePackage(directory, module, target, &internal.Config{})
 			}
 
 			fmt.Printf("%s", internal.FormatImportsTable(directories, module))

@@ -34,7 +34,7 @@ func entrypoints() *Command {
 			}
 
 			for _, directory := range directories {
-				internal.ParsePackage(directory, module, target)
+				internal.ParsePackage(directory, module, target, &internal.Config{})
 			}
 
 			fmt.Printf("%s", internal.FormatEntrypoints(directories, module))

@@ -84,7 +84,24 @@ type Package struct {
 	Files      []*File
 }
 
-func ParsePackage(directory *Directory, module, target string) error {
+type Config struct {
+	Exclude map[string]struct{}
+}
+
+func NewConfig(exclude string) *Config {
+	return &Config{
+		Exclude: createSet(exclude),
+	}
+}
+
+type Set map[string]struct{}
+
+func (s Set) Contains(item string) bool {
+	_, ok := s[item]
+	return ok
+}
+
+func ParsePackage(directory *Directory, module, target string, config *Config) error {
 	path := directory.Path
 
 	fset := token.NewFileSet()
@@ -107,6 +124,10 @@ func ParsePackage(directory *Directory, module, target string) error {
 		pkg.ModulePath = modulePath
 
 		pkg.Name = pkgName
+
+		if Set(config.Exclude).Contains(pkg.ModulePath) {
+			continue
+		}
 
 		var files []*File
 
@@ -834,6 +855,15 @@ func isMock(name string) bool {
 
 func isTest(name string) bool {
 	return name == "test"
+}
+
+func createSet(value string) map[string]struct{} {
+	items := strings.Split(value, ",")
+	set := make(map[string]struct{}, len(items))
+	for _, i := range items {
+		set[i] = struct{}{}
+	}
+	return set
 }
 
 type DirectoryMap map[string]*Directory
