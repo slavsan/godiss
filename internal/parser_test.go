@@ -490,55 +490,56 @@ func TestFormatTypes(t *testing.T) {
 	expected := "" +
 		"__YELLOW__../examples__NOCOLOR__\n" +
 		"\n" +
-		"__GREEN__+__NOCOLOR__ type Factory {\n" +
+		"__GREEN__+__NOCOLOR__ type __BLUE__Factory__NOCOLOR__ {\n" +
 		"    __GREEN__+__NOCOLOR__ Name string\n" +
 		"}\n" +
 		"\n" +
-		"__GREEN__+__NOCOLOR__ type Manager {\n" +
+		"__GREEN__+__NOCOLOR__ type __BLUE__Manager__NOCOLOR__ {\n" +
 		"    __GREEN__+__NOCOLOR__ Pointer *Mechanic\n" +
 		"}\n" +
 		"\n" +
-		"__GREEN__+__NOCOLOR__ type Mechanic {\n" +
+		"__GREEN__+__NOCOLOR__ type __BLUE__Mechanic__NOCOLOR__ {\n" +
 		"    __GREEN__+__NOCOLOR__ Skills []string\n" +
 		"    __GREEN__+__NOCOLOR__ Colleagues []*Mechanic\n" +
 		"}\n" +
 		"\n" +
-		"__RED__-__NOCOLOR__ type tool {\n" +
+		"__RED__-__NOCOLOR__ type __BLUE__tool__NOCOLOR__ {\n" +
 		"    __RED__-__NOCOLOR__ name string\n" +
 		"}\n" +
 		"\n" +
 		"__YELLOW__../examples/cars__NOCOLOR__\n" +
 		"\n" +
-		"__GREEN__+__NOCOLOR__ type Camaro {\n" +
+		"__GREEN__+__NOCOLOR__ type __BLUE__Camaro__NOCOLOR__ {\n" +
 		"    __RED__-__NOCOLOR__ other.Vehicle\n" +
-		"    __GREEN__+__NOCOLOR__ Name string\n" +
-		"    __GREEN__+__NOCOLOR__ Features map[string]int\n" +
-		"    __GREEN__+__NOCOLOR__ Callback func(string, int) (int64, error)\n" +
+		"    __RED__-__NOCOLOR__ sync.Mutex\n" +
+		"    __GREEN__+__NOCOLOR__ Struct struct{ XXX int }\n" +
+		"    __GREEN__+__NOCOLOR__ One string\n" +
 		"    __GREEN__+__NOCOLOR__ Fuel interface{}\n" +
 		"    __GREEN__+__NOCOLOR__ ChNoPos chan string\n" +
 		"    __GREEN__+__NOCOLOR__ ChRecv <-chan int32\n" +
 		"    __GREEN__+__NOCOLOR__ ChSend chan<- int32\n" +
-		"    __GREEN__+__NOCOLOR__ Struct struct{ XXX int }\n" +
-		"    __GREEN__+__NOCOLOR__ One string\n" +
+		"    __GREEN__+__NOCOLOR__ Features map[string]int\n" +
+		"    __GREEN__+__NOCOLOR__ Callback func(string, int) (int64, error)\n" +
 		"    __GREEN__+__NOCOLOR__ Two string\n" +
 		"    __GREEN__+__NOCOLOR__ Ellipsis func(...string)\n" +
 		"    __GREEN__+__NOCOLOR__ ExampleMutex func(sync.Mutex)\n" +
 		"    __GREEN__+__NOCOLOR__ Three sync.Mutex\n" +
 		"    __GREEN__+__NOCOLOR__ Four sync.Mutex\n" +
 		"    __GREEN__+__NOCOLOR__ AnotherStruct struct{  sync.Mutex }\n" +
-		"    __RED__-__NOCOLOR__ sync.Mutex\n" +
+		"    __GREEN__+__NOCOLOR__ Name string\n" +
 		"}\n" +
 		"\n" +
 		"__YELLOW__../examples/cars__NOCOLOR__\n" +
 		"\n" +
-		"__GREEN__+__NOCOLOR__ type Foo { __RED__mytag__NOCOLOR__\n" +
+		"__GREEN__+__NOCOLOR__ type __BLUE__Foo__NOCOLOR__ { __RED__mytag__NOCOLOR__\n" +
 		"    __GREEN__+__NOCOLOR__ Bar string\n" +
 		"}\n" +
 		"\n" +
 		"__YELLOW__../examples/other__NOCOLOR__\n" +
 		"\n" +
-		"__GREEN__+__NOCOLOR__ type Vehicle {\n" +
+		"__GREEN__+__NOCOLOR__ type __BLUE__Vehicle__NOCOLOR__ {\n" +
 		"    __GREEN__+__NOCOLOR__ Doors int\n" +
+		"\n" +
 		"    __GREEN__+__NOCOLOR__ StartEngine() error\n" +
 		"    __GREEN__+__NOCOLOR__ StopEngine() error\n" +
 		"}\n" +
@@ -547,6 +548,7 @@ func TestFormatTypes(t *testing.T) {
 	expected = strings.ReplaceAll(expected, "__GREEN__", internal.Green)
 	expected = strings.ReplaceAll(expected, "__YELLOW__", internal.Yellow)
 	expected = strings.ReplaceAll(expected, "__RED__", internal.Red)
+	expected = strings.ReplaceAll(expected, "__BLUE__", internal.Blue)
 	expected = strings.ReplaceAll(expected, "__NOCOLOR__", internal.NoColor)
 
 	actualLines := strings.Split(internal.FormatTypes(actual, "github.com/slavsan/gog"), "\n")
