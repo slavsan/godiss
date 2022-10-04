@@ -180,9 +180,9 @@ func TestLoadPackages(t *testing.T) {
 					ModulePath: "../examples/cars",
 					Files: []*internal.File{
 						{
-							Path:            "../examples/cars/main.go",
-							Imports:         []*internal.Import{},
-							BuildConstraint: []string{"mytag"},
+							Path:             "../examples/cars/main.go",
+							Imports:          []*internal.Import{},
+							BuildConstraints: []string{"mytag"},
 							Structs: []*internal.Struct{
 								{
 									Name: "Foo",
@@ -531,7 +531,7 @@ func TestFormatTypes(t *testing.T) {
 		"\n" +
 		"__YELLOW__../examples/cars__NOCOLOR__\n" +
 		"\n" +
-		"__GREEN__+__NOCOLOR__ type Foo {\n" +
+		"__GREEN__+__NOCOLOR__ type Foo { __RED__mytag__NOCOLOR__\n" +
 		"    __GREEN__+__NOCOLOR__ Bar string\n" +
 		"}\n" +
 		"\n" +

@@ -45,10 +45,10 @@ type Field struct {
 }
 
 type File struct {
-	Path            string
-	BuildConstraint []string
-	Structs         []*Struct
-	Imports         []*Import
+	Path             string
+	BuildConstraints []string
+	Structs          []*Struct
+	Imports          []*Import
 }
 
 type Directory struct {
@@ -99,7 +99,7 @@ func ParsePackage(directory *Directory, module, target string) error {
 			methods := map[string][]*Method{}
 
 			if bc, ok := buildConstraints(astFile); ok {
-				f.BuildConstraint = bc
+				f.BuildConstraints = bc
 			}
 
 			for _, node := range astFile.Imports {
@@ -634,15 +634,22 @@ func formatTokenVisibility(token string) string {
 	return fmt.Sprintf("%s-%s ", Red, NoColor)
 }
 
+func maybeAddBuildConstraint(f *File) string {
+	if len(f.BuildConstraints) > 0 {
+		return fmt.Sprintf(" %s%s%s", Red, strings.Join(f.BuildConstraints, ","), NoColor)
+	}
+	return ""
+}
+
 func formatStructForConsole(s *Struct, f *File) string {
 	var sb strings.Builder
 
 	// TODO: sort fields and methods by visibility (or alphabetically, or do no sorting optionally)
 	// TODO: move visibility logic to fields and methods parsing
 	sb.WriteString(fmt.Sprintf(
-		"%stype %s { %s%s%s\n",
+		"%stype %s {%s\n",
 		formatTokenVisibility(s.Name), s.Name,
-		Red, strings.Join(f.BuildConstraint, ","), NoColor,
+		maybeAddBuildConstraint(f),
 	))
 	for _, f := range s.Fields {
 		if f.Name == "" {
@@ -666,7 +673,7 @@ func FormatEntrypoints(directories map[string]*Directory, module string) string 
 		for _, pkg := range PackagesMap(directory.Packages).SortedPackages() {
 			for _, f := range pkg.Files {
 				if strings.HasSuffix(f.Path, "/main.go") {
-					sb.WriteString(fmt.Sprintf("%s %s%s%s\n", pkg.ModulePath, Red, strings.Join(f.BuildConstraint, ","), NoColor))
+					sb.WriteString(fmt.Sprintf("%s %s%s%s\n", pkg.ModulePath, Red, strings.Join(f.BuildConstraints, ","), NoColor))
 				}
 			}
 		}
