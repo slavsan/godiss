@@ -23,6 +23,13 @@ const (
 	Cyan    = "\033[0;36m"
 )
 
+type Visibility int
+
+const (
+	Private Visibility = iota
+	Public
+)
+
 type Struct struct {
 	Name    string
 	Fields  []*Field
@@ -31,6 +38,13 @@ type Struct struct {
 
 type Method struct {
 	Signature string
+}
+
+func (m *Method) Visibility() Visibility {
+	if isPublic(m.Signature, "") {
+		return Public
+	}
+	return Private
 }
 
 type Import struct {
@@ -42,6 +56,13 @@ type Import struct {
 type Field struct {
 	Name string
 	Type string
+}
+
+func (f *Field) Visibility() Visibility {
+	if isPublic(f.Name, f.Type) {
+		return Public
+	}
+	return Private
 }
 
 type File struct {
@@ -275,6 +296,13 @@ func extractStruct(n *ast.TypeSpec) *Struct {
 	}
 
 	return s
+}
+
+func isPublic(name, typ string) bool {
+	if len(name) > 0 {
+		return ast.IsExported(name)
+	}
+	return ast.IsExported(typ)
 }
 
 func getType(e ast.Expr) string {
@@ -647,16 +675,23 @@ func formatStructForConsole(s *Struct, f *File) string {
 	// TODO: sort fields and methods by visibility (or alphabetically, or do no sorting optionally)
 	// TODO: move visibility logic to fields and methods parsing
 	sb.WriteString(fmt.Sprintf(
-		"%stype %s {%s\n",
-		formatTokenVisibility(s.Name), s.Name,
+		"%stype %s%s%s {%s\n",
+		formatTokenVisibility(s.Name), Blue, s.Name, NoColor,
 		maybeAddBuildConstraint(f),
 	))
+
+	sort.Sort(ByFieldVisibility(s.Fields))
+	sort.Sort(ByMethodVisibility(s.Methods))
+
 	for _, f := range s.Fields {
 		if f.Name == "" {
 			sb.WriteString(fmt.Sprintf("    %s%s\n", formatStructFieldVisibility(f), f.Type))
 		} else {
 			sb.WriteString(fmt.Sprintf("    %s%s %s\n", formatStructFieldVisibility(f), f.Name, f.Type))
 		}
+	}
+	if len(s.Fields) > 0 && len(s.Methods) > 0 {
+		sb.WriteString("\n")
 	}
 	for _, m := range s.Methods {
 		sb.WriteString(fmt.Sprintf("    %s%s\n", formatTokenVisibility(m.Signature), m.Signature))
@@ -847,3 +882,19 @@ type ByStructName []*Struct
 func (s ByStructName) Len() int           { return len(s) }
 func (s ByStructName) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s ByStructName) Less(i, j int) bool { return s[i].Name < s[j].Name }
+
+type ByFieldVisibility []*Field
+
+func (s ByFieldVisibility) Len() int      { return len(s) }
+func (s ByFieldVisibility) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s ByFieldVisibility) Less(i, j int) bool {
+	return s[i].Visibility() < s[j].Visibility()
+}
+
+type ByMethodVisibility []*Method
+
+func (s ByMethodVisibility) Len() int      { return len(s) }
+func (s ByMethodVisibility) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s ByMethodVisibility) Less(i, j int) bool {
+	return s[i].Visibility() < s[j].Visibility()
+}
