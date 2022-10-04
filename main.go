@@ -1,6 +1,6 @@
 package main
 
-import "github.com/slavsan/gog/cmd"
+import "github.com/slavsan/godiss/cmd"
 
 func main() {
 	cmd.Execute()

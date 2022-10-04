@@ -3,7 +3,7 @@ package cars
 import (
 	"sync"
 
-	"github.com/slavsan/gog/examples/other"
+	"github.com/slavsan/godiss/examples/other"
 )
 
 type Camaro struct {

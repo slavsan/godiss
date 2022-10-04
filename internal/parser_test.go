@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/slavsan/gog/internal"
+	"github.com/slavsan/godiss/internal"
 )
 
 func TestLoadStructs(t *testing.T) {
@@ -146,7 +146,7 @@ func TestLoadPackages(t *testing.T) {
 							Path: "../examples/cars/car.go",
 							Imports: []*internal.Import{
 								{Name: "", Path: "sync", StdLib: true},
-								{Name: "", Path: "github.com/slavsan/gog/examples/other", StdLib: false},
+								{Name: "", Path: "github.com/slavsan/godiss/examples/other", StdLib: false},
 							},
 							Structs: []*internal.Struct{
 								{
@@ -233,7 +233,7 @@ func TestLoadPackages(t *testing.T) {
 						{
 							Path: "../examples/factory.go",
 							Imports: []*internal.Import{
-								{Name: "carmodel", Path: "github.com/slavsan/gog/examples/cars", StdLib: false},
+								{Name: "carmodel", Path: "github.com/slavsan/godiss/examples/cars", StdLib: false},
 							},
 							Structs: []*internal.Struct{
 								{
@@ -445,8 +445,8 @@ func TestFormatImports(t *testing.T) {
 	expected := `digraph {
     rankdir="LR"
 
-    "../examples" -> "github.com/slavsan/gog/examples/cars"
-    "../examples/cars" -> "github.com/slavsan/gog/examples/other"
+    "../examples" -> "github.com/slavsan/godiss/examples/cars"
+    "../examples/cars" -> "github.com/slavsan/godiss/examples/other"
 }
 `
 
@@ -467,11 +467,11 @@ func TestFormatImportsTable(t *testing.T) {
 		assertEqual(t, nil, err)
 	}
 	expected := "" +
-		fmt.Sprintf("1 %sgithub.com/slavsan/gog/examples/cars%s\n", internal.Green, internal.NoColor) +
-		fmt.Sprintf("1 %sgithub.com/slavsan/gog/examples/other%s\n", internal.Green, internal.NoColor) +
+		fmt.Sprintf("1 %sgithub.com/slavsan/godiss/examples/cars%s\n", internal.Green, internal.NoColor) +
+		fmt.Sprintf("1 %sgithub.com/slavsan/godiss/examples/other%s\n", internal.Green, internal.NoColor) +
 		fmt.Sprintf("1 %ssync%s\n", internal.Yellow, internal.NoColor)
 
-	actualLines := strings.Split(internal.FormatImportsTable(actual, "github.com/slavsan/gog", &internal.Config{}), "\n")
+	actualLines := strings.Split(internal.FormatImportsTable(actual, "github.com/slavsan/godiss", &internal.Config{}), "\n")
 	expectedLines := strings.Split(expected, "\n")
 
 	assertEqual(t, len(expectedLines), len(actualLines))
@@ -551,7 +551,7 @@ func TestFormatTypes(t *testing.T) {
 	expected = strings.ReplaceAll(expected, "__BLUE__", internal.Blue)
 	expected = strings.ReplaceAll(expected, "__NOCOLOR__", internal.NoColor)
 
-	actualLines := strings.Split(internal.FormatTypes(actual, "github.com/slavsan/gog"), "\n")
+	actualLines := strings.Split(internal.FormatTypes(actual, "github.com/slavsan/godiss"), "\n")
 	expectedLines := strings.Split(expected, "\n")
 
 	assertEqual(t, len(expectedLines), len(actualLines))

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/slavsan/gog/internal"
+	"github.com/slavsan/godiss/internal"
 )
 
 func imports_table() *Command {

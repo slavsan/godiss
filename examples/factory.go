@@ -1,7 +1,7 @@
 package auto
 
 import (
-	carmodel "github.com/slavsan/gog/examples/cars"
+	carmodel "github.com/slavsan/godiss/examples/cars"
 )
 
 type Factory struct {

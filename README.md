@@ -1,1 +1,1 @@
-# gog
+# godiss

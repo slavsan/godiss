@@ -1,3 +1,3 @@
-module github.com/slavsan/gog
+module github.com/slavsan/godiss
 
 go 1.19
