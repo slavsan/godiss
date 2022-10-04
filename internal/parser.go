@@ -86,6 +86,7 @@ type Package struct {
 
 type Config struct {
 	Exclude       map[string]struct{}
+	Select        map[string]struct{}
 	ExcludeStdLib bool
 }
 
@@ -120,7 +121,11 @@ func ParsePackage(directory *Directory, module, target string, config *Config) e
 
 		pkg.Name = pkgName
 
-		if Set(config.Exclude).Contains(pkg.ModulePath) {
+		if len(config.Select) > 0 && !(Set(config.Select).Contains(pkg.ModulePath)) {
+			continue
+		}
+
+		if len(config.Exclude) > 0 && Set(config.Exclude).Contains(pkg.ModulePath) {
 			continue
 		}
 
@@ -850,15 +855,6 @@ func isMock(name string) bool {
 
 func isTest(name string) bool {
 	return name == "test"
-}
-
-func createSet(value string) map[string]struct{} {
-	items := strings.Split(value, ",")
-	set := make(map[string]struct{}, len(items))
-	for _, i := range items {
-		set[i] = struct{}{}
-	}
-	return set
 }
 
 type DirectoryMap map[string]*Directory

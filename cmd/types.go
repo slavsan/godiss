@@ -14,6 +14,7 @@ func types() *Command {
 		Description: "Display defined types",
 		Flags: map[string]*Flag{
 			"exclude": {"", "exclude packages"},
+			"select":  {"", "select packages"},
 		},
 		Run: func(args []string) error {
 			var target string
@@ -22,6 +23,7 @@ func types() *Command {
 			var directories map[string]*internal.Directory
 
 			exclude := command.Flags["exclude"].Value.(string)
+			selected := command.Flags["select"].Value.(string)
 
 			target, err = filepath.Abs(args[0])
 			if err != nil {
@@ -41,6 +43,7 @@ func types() *Command {
 			for _, p := range directories {
 				internal.ParsePackage(p, module, target, &internal.Config{
 					Exclude: createSet(exclude),
+					Select:  createSet(selected),
 				})
 			}
 

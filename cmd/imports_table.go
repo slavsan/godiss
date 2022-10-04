@@ -59,6 +59,9 @@ func createSet(value string) map[string]struct{} {
 	items := strings.Split(value, ",")
 	set := make(map[string]struct{}, len(items))
 	for _, i := range items {
+		if i == "" {
+			continue
+		}
 		set[i] = struct{}{}
 	}
 	return set
