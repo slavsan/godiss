@@ -180,8 +180,9 @@ func TestLoadPackages(t *testing.T) {
 					ModulePath: "../examples/cars",
 					Files: []*internal.File{
 						{
-							Path:    "../examples/cars/main.go",
-							Imports: []*internal.Import{},
+							Path:            "../examples/cars/main.go",
+							Imports:         []*internal.Import{},
+							BuildConstraint: []string{"mytag"},
 							Structs: []*internal.Struct{
 								{
 									Name: "Foo",

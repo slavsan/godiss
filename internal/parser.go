@@ -45,8 +45,8 @@ type Field struct {
 }
 
 type File struct {
-	BuildConstraint string
 	Path            string
+	BuildConstraint []string
 	Structs         []*Struct
 	Imports         []*Import
 }
@@ -85,10 +85,6 @@ func ParsePackage(directory *Directory, module, target string) error {
 		)
 		pkg.ModulePath = modulePath
 
-		if hasBuldConstraint(astPkg) {
-			// continue
-		}
-
 		pkg.Name = pkgName
 
 		var files []*File
@@ -101,6 +97,10 @@ func ParsePackage(directory *Directory, module, target string) error {
 			structs := []*Struct{}
 			currentFile = fileName
 			methods := map[string][]*Method{}
+
+			if bc, ok := buildConstraints(astFile); ok {
+				f.BuildConstraint = bc
+			}
 
 			for _, node := range astFile.Imports {
 				name := ""
@@ -502,17 +502,16 @@ func formatStructMethods(s *Struct) string {
 	return sb.String()
 }
 
-func hasBuldConstraint(pkg *ast.Package) bool {
-	for _, f := range pkg.Files {
-		for _, c := range f.Comments {
-			for _, l := range c.List {
-				if strings.HasPrefix(l.Text, "//go:build") {
-					return true
-				}
+func buildConstraints(f *ast.File) ([]string, bool) {
+	var found []string
+	for _, c := range f.Comments {
+		for _, l := range c.List {
+			if strings.HasPrefix(l.Text, "//go:build") {
+				found = append(found, strings.ReplaceAll(l.Text, "//go:build ", ""))
 			}
 		}
 	}
-	return false
+	return found, len(found) > 0
 }
 
 func normalizePackageName(name string) string {
@@ -661,12 +660,9 @@ func FormatEntrypoints(directories map[string]*Directory, module string) string 
 
 	for _, directory := range DirectoryMap(directories).SortedDirectories() {
 		for _, pkg := range PackagesMap(directory.Packages).SortedPackages() {
-			// if pkg.Name == "main" {
-			// 	sb.WriteString(fmt.Sprintf("%s\n", pkg.ModulePath))
-			// }
 			for _, f := range pkg.Files {
 				if strings.HasSuffix(f.Path, "/main.go") {
-					sb.WriteString(fmt.Sprintf("%s\n", f.Path))
+					sb.WriteString(fmt.Sprintf("%s %s%s%s\n", pkg.ModulePath, Red, strings.Join(f.BuildConstraint, ","), NoColor))
 				}
 			}
 		}
