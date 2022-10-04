@@ -634,12 +634,16 @@ func formatTokenVisibility(token string) string {
 	return fmt.Sprintf("%s-%s ", Red, NoColor)
 }
 
-func formatStructForConsole(s *Struct) string {
+func formatStructForConsole(s *Struct, f *File) string {
 	var sb strings.Builder
 
 	// TODO: sort fields and methods by visibility (or alphabetically, or do no sorting optionally)
 	// TODO: move visibility logic to fields and methods parsing
-	sb.WriteString(fmt.Sprintf("%stype %s {\n", formatTokenVisibility(s.Name), s.Name))
+	sb.WriteString(fmt.Sprintf(
+		"%stype %s { %s%s%s\n",
+		formatTokenVisibility(s.Name), s.Name,
+		Red, strings.Join(f.BuildConstraint, ","), NoColor,
+	))
 	for _, f := range s.Fields {
 		if f.Name == "" {
 			sb.WriteString(fmt.Sprintf("    %s%s\n", formatStructFieldVisibility(f), f.Type))
@@ -686,7 +690,7 @@ func FormatTypes(directories map[string]*Directory, module string) string {
 				sort.Sort(ByStructName(f.Structs))
 
 				for _, s := range f.Structs {
-					sb.WriteString(fmt.Sprintf("\n%s", formatStructForConsole(s)))
+					sb.WriteString(fmt.Sprintf("\n%s", formatStructForConsole(s, f)))
 					pkgEmpty = false
 				}
 			}
