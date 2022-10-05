@@ -69,12 +69,44 @@ func (e *Executor) Usage(c *Command) {
 	}
 }
 
+func showHelp(c *Command) {
+	max := 0
+	for k := range c.Flags {
+		if len(k) > max {
+			max = len(k)
+		}
+	}
+
+	fmt.Printf("Usage:\n")
+	for k, f := range c.Flags {
+		fmt.Printf(
+			"\t-%s, --%s%s  %s\n",
+			f.Short, k, strings.Repeat(" ", max-len(k)), f.Usage,
+		)
+	}
+}
+
 func (e *Executor) Execute(c *Command) {
 	e.Arg++
 	if len(c.Subcommands) > 0 {
 		var arg string
 		if len(os.Args) > e.Arg {
 			arg = os.Args[e.Arg]
+		}
+
+		if arg == "help" {
+			e.Arg++
+			if len(os.Args) > e.Arg {
+				arg = os.Args[e.Arg]
+			}
+
+			if command, ok := c.Subcommands[arg]; ok {
+				showHelp(command)
+				return
+			}
+
+			fmt.Printf("unknown subcommand: %s\n", arg)
+			os.Exit(1)
 		}
 
 		if command, ok := c.Subcommands[arg]; ok {
@@ -106,22 +138,9 @@ func (e *Executor) Execute(c *Command) {
 
 	err := flagSet.Parse(os.Args[e.Arg:])
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("%s\n\n", err.Error())
 
-		max := 0
-		for k := range c.Flags {
-			if len(k) > max {
-				max = len(k)
-			}
-		}
-
-		fmt.Printf("\nUsage:\n")
-		for k, f := range c.Flags {
-			fmt.Printf(
-				"\t-%s, --%s%s  %s\n",
-				f.Short, k, strings.Repeat(" ", max-len(k)), f.Usage,
-			)
-		}
+		showHelp(c)
 		os.Exit(1)
 	}
 
@@ -138,7 +157,6 @@ func (e *Executor) Execute(c *Command) {
 
 	args := flagSet.Args()
 
-	// TODO: add default
 	if len(args) == 0 {
 		if c.DefaultArg == "" {
 			fmt.Printf("emtpy args\n")
