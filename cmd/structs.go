@@ -18,12 +18,12 @@ func structs() *Command {
 
 			target, err = filepath.Abs(args[0])
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			structs, err = internal.LoadStructs(target)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			fmt.Println(internal.Format(structs))

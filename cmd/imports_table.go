@@ -29,17 +29,17 @@ func imports_table() *Command {
 
 			target, err = filepath.Abs(args[0])
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			module, err = getModule(target)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			directories, err = internal.LoadPackages(target, module, target)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			config := &internal.Config{

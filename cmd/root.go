@@ -166,7 +166,11 @@ func (e *Executor) Execute(c *Command) {
 		args = append(args, c.DefaultArg)
 	}
 
-	c.Run(args)
+	err = c.Run(args)
+	if err != nil {
+		fmt.Printf("%s\n", err.Error())
+		os.Exit(1)
+	}
 }
 
 func root() *Command {
@@ -193,7 +197,7 @@ func Execute() {
 func getModule(target string) (string, error) {
 	bytes, err := ioutil.ReadFile(path.Join(target, "go.mod"))
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	lines := strings.Split(string(bytes), "\n")
