@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -20,6 +21,7 @@ type Command struct {
 }
 
 type Flag struct {
+	Short string
 	Value any
 	Usage string
 }
@@ -84,20 +86,43 @@ func (e *Executor) Execute(c *Command) {
 	}
 
 	flagSets := map[string]any{}
+	flagSet := flag.NewFlagSet(c.Name, flag.ContinueOnError)
 
-	flagSet := flag.NewFlagSet(c.Name, flag.ExitOnError)
 	for k, f := range c.Flags {
 		switch v := f.Value.(type) {
 		case bool:
 			flagSets[k] = flagSet.Bool(k, v, f.Usage)
+			flagSets[k] = flagSet.Bool(f.Short, v, f.Usage)
 		case string:
 			flagSets[k] = flagSet.String(k, v, f.Usage)
+			flagSets[k] = flagSet.String(f.Short, v, f.Usage)
 		default:
 			panic(fmt.Sprintf("unhandled type: %#v - (%#v)", reflect.TypeOf(v), f))
 		}
 	}
 
-	flagSet.Parse(os.Args[e.Arg:])
+	flagSet.SetOutput(&bytes.Buffer{})
+
+	err := flagSet.Parse(os.Args[e.Arg:])
+	if err != nil {
+		fmt.Println(err.Error())
+
+		max := 0
+		for k := range c.Flags {
+			if len(k) > max {
+				max = len(k)
+			}
+		}
+
+		fmt.Printf("\nUsage:\n")
+		for k, f := range c.Flags {
+			fmt.Printf(
+				"\t-%s, --%s%s  %s\n",
+				f.Short, k, strings.Repeat(" ", max-len(k)), f.Usage,
+			)
+		}
+		os.Exit(1)
+	}
 
 	for k, v := range flagSets {
 		switch f := v.(type) {
@@ -112,6 +137,7 @@ func (e *Executor) Execute(c *Command) {
 
 	args := flagSet.Args()
 
+	// TODO: add default
 	if len(args) == 0 {
 		fmt.Printf("emtpy args\n")
 		e.Usage(c)

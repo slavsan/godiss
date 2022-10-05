@@ -13,8 +13,9 @@ func types() *Command {
 		Name:        "types",
 		Description: "Display defined types",
 		Flags: map[string]*Flag{
-			"exclude": {"", "exclude packages"},
-			"select":  {"", "select packages"},
+			"exclude":      {"e", "", "exclude packages"},
+			"select-exact": {"E", "", "select exact packages"},
+			"select":       {"s", "", "select packages"},
 		},
 		Run: func(args []string) error {
 			var target string
@@ -23,6 +24,7 @@ func types() *Command {
 			var directories map[string]*internal.Directory
 
 			exclude := command.Flags["exclude"].Value.(string)
+			selectExact := command.Flags["select-exact"].Value.(string)
 			selected := command.Flags["select"].Value.(string)
 
 			target, err = filepath.Abs(args[0])
@@ -40,11 +42,14 @@ func types() *Command {
 				panic(err)
 			}
 
+			config := &internal.Config{
+				Exclude:     createSet(exclude),
+				SelectExact: createSet(selectExact),
+				Select:      createSet(selected),
+			}
+
 			for _, p := range directories {
-				internal.ParsePackage(p, module, target, &internal.Config{
-					Exclude: createSet(exclude),
-					Select:  createSet(selected),
-				})
+				internal.ParsePackage(p, module, target, config)
 			}
 
 			fmt.Printf("%s", internal.FormatTypes(directories, module))

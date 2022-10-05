@@ -14,7 +14,8 @@ func imports_table() *Command {
 		Name:        "imports_table",
 		Description: "Display imports (in a table)",
 		Flags: map[string]*Flag{
-			"nostdlib": {false, "exclude stdlib packages"},
+			"nostdlib": {"n", false, "exclude stdlib packages"},
+			"select":   {"s", "", "select packages"},
 		},
 		Run: func(args []string) error {
 			var target string
@@ -23,6 +24,7 @@ func imports_table() *Command {
 			var directories map[string]*internal.Directory
 
 			excludeStdLib := command.Flags["nostdlib"].Value.(bool)
+			selected := command.Flags["select"].Value.(string)
 
 			target, err = filepath.Abs(args[0])
 			if err != nil {
@@ -41,6 +43,7 @@ func imports_table() *Command {
 
 			config := &internal.Config{
 				ExcludeStdLib: excludeStdLib,
+				Select:        createSet(selected),
 			}
 
 			for _, directory := range directories {

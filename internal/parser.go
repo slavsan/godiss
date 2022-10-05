@@ -86,6 +86,7 @@ type Package struct {
 
 type Config struct {
 	Exclude       map[string]struct{}
+	SelectExact   map[string]struct{}
 	Select        map[string]struct{}
 	ExcludeStdLib bool
 }
@@ -121,7 +122,19 @@ func ParsePackage(directory *Directory, module, target string, config *Config) e
 
 		pkg.Name = pkgName
 
-		if len(config.Select) > 0 && !(Set(config.Select).Contains(pkg.ModulePath)) {
+		if len(config.Select) > 0 {
+			skip := true
+			for sel, _ := range config.Select {
+				if strings.Contains(pkg.ModulePath, sel) {
+					skip = false
+				}
+			}
+			if skip {
+				continue
+			}
+		}
+
+		if len(config.SelectExact) > 0 && !(Set(config.SelectExact).Contains(pkg.ModulePath)) {
 			continue
 		}
 
