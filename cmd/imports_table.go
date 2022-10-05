@@ -13,6 +13,7 @@ func imports_table() *Command {
 	command = &Command{
 		Name:        "imports_table",
 		Description: "Display imports (in a table)",
+		DefaultArg:  ".",
 		Flags: map[string]*Flag{
 			"nostdlib": {"n", false, "exclude stdlib packages"},
 			"select":   {"s", "", "select packages"},

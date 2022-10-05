@@ -11,6 +11,7 @@ func packages() *Command {
 	return &Command{
 		Name:        "packages",
 		Description: "Display packages in a project",
+		DefaultArg:  ".",
 		Run: func(args []string) error {
 			var target string
 			var module string

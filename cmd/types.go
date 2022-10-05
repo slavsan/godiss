@@ -12,6 +12,7 @@ func types() *Command {
 	command = &Command{
 		Name:        "types",
 		Description: "Display defined types",
+		DefaultArg:  ".",
 		Flags: map[string]*Flag{
 			"exclude":      {"e", "", "exclude packages"},
 			"select-exact": {"E", "", "select exact packages"},

@@ -11,6 +11,7 @@ func imports() *Command {
 	return &Command{
 		Name:        "imports",
 		Description: "Display imports",
+		DefaultArg:  ".",
 		Run: func(args []string) error {
 			var target string
 			var module string

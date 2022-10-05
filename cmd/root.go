@@ -17,6 +17,7 @@ type Command struct {
 	Description string
 	Subcommands map[string]*Command
 	Flags       map[string]*Flag
+	DefaultArg  string
 	Run         func(args []string) error
 }
 
@@ -139,9 +140,12 @@ func (e *Executor) Execute(c *Command) {
 
 	// TODO: add default
 	if len(args) == 0 {
-		fmt.Printf("emtpy args\n")
-		e.Usage(c)
-		os.Exit(1)
+		if c.DefaultArg == "" {
+			fmt.Printf("emtpy args\n")
+			e.Usage(c)
+			os.Exit(1)
+		}
+		args = append(args, c.DefaultArg)
 	}
 
 	c.Run(args)

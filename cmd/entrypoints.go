@@ -12,6 +12,7 @@ func entrypoints() *Command {
 		Name:        "entrypoints",
 		Description: "Display entrypoints",
 		Subcommands: map[string]*Command{},
+		DefaultArg:  ".",
 		Run: func(args []string) error {
 			var target string
 			var module string
