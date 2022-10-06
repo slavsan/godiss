@@ -89,6 +89,7 @@ type Config struct {
 	SelectExact   map[string]struct{}
 	Select        map[string]struct{}
 	ExcludeStdLib bool
+	IncludeTests  bool
 }
 
 type Set map[string]struct{}
@@ -110,7 +111,7 @@ func ParsePackage(directory *Directory, module, target string, config *Config) e
 	for pkgName, astPkg := range pkgMap {
 		pkg := &Package{}
 
-		if strings.HasSuffix(pkgName, "_test") {
+		if !config.IncludeTests && strings.HasSuffix(pkgName, "_test") {
 			continue
 		}
 
@@ -746,6 +747,69 @@ func FormatEntrypoints(directories map[string]*Directory, module string) string 
 				}
 			}
 		}
+	}
+
+	return sb.String()
+}
+
+func FormatStats(directories map[string]*Directory, module string) string {
+	var sb strings.Builder
+
+	packagesCount := 0
+	filesCount := 0
+	testFilesCount := 0
+	sourceFilesCount := 0
+	filesWithBuildConstraints := 0
+	structsCount := 0
+	entrypointsCount := 0
+
+	for _, directory := range DirectoryMap(directories).SortedDirectories() {
+		for _, pkg := range PackagesMap(directory.Packages).SortedPackages() {
+			packagesCount++
+			for _, f := range pkg.Files {
+				_ = f
+				filesCount++
+				if strings.HasSuffix(f.Path, "_test.go") {
+					testFilesCount++
+				}
+				if len(f.BuildConstraints) > 0 {
+					filesWithBuildConstraints++
+				}
+				if strings.HasSuffix(f.Path, "/main.go") {
+					entrypointsCount++
+				}
+				structsCount += len(f.Structs)
+			}
+		}
+	}
+
+	sourceFilesCount = filesCount - testFilesCount
+
+	type Stat struct {
+		Name   string
+		Number int
+	}
+
+	stats := []Stat{
+		{"packages count", packagesCount},
+		{"files count", filesCount},
+		{"source files", sourceFilesCount},
+		{"test files", testFilesCount},
+		{"files with build constraints", filesWithBuildConstraints},
+		{"structs count", structsCount},
+		{"entrypoints count", entrypointsCount},
+	}
+
+	max := 0
+	for _, s := range stats {
+		x := digitsCount(s.Number)
+		if x > max {
+			max = x
+		}
+	}
+
+	for _, s := range stats {
+		sb.WriteString(fmt.Sprintf(" %*v | %s\n", max, s.Number, s.Name))
 	}
 
 	return sb.String()

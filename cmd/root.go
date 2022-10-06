@@ -186,6 +186,7 @@ func root() *Command {
 	command.Add(imports_table())
 	command.Add(types())
 	command.Add(entrypoints())
+	command.Add(stats())
 
 	return command
 }
